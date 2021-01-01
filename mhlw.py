@@ -292,7 +292,6 @@ def writeValues(valueDate, values):
   service = build('sheets', 'v4', credentials=creds)
   sheet = service.spreadsheets()
 
-
   print('Writing to Sum By Day Sheet')
   result = writeSumByDay(sheet, valueDate, values)
   print(result)
