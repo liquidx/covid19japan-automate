@@ -5,7 +5,7 @@ FROM python:3.9
 # Install extra dependencies
 RUN apt-get update -y
 RUN apt-get install -y python-pip python-dev build-essential
-RUN apt update && apt install -y libsm6 libxext6
+RUN apt update && apt install -y libsm6 libxext6 libgl1
 RUN apt-get -y install tesseract-ocr
 
 # Allow statements and log messages to immediately appear in the Knative logs

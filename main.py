@@ -13,9 +13,12 @@ def hello_world():
 
 @app.route('/reporturl')
 def report_url():
-  url = mhlw.getLatestCovidReport()
+  url = mhlw.getLatestCovidReport(mhlw.DEFAULT_MHLW_INDEX_URL)
   return 'Report URL: {}'.format(url)
 
+@app.route('/mhlw/today')
+def report_today():
+  return mhlw.reportToday()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

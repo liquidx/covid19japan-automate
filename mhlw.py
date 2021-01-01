@@ -302,7 +302,36 @@ def writeValues(valueDate, values):
 
   print('Writing to Recoveries Sheet')
   result = writeRecoveries(sheet, valueDate, values)
-  print(result)
+  return result
+
+def reportToday(writeToSpreadsheet=False):
+  reportUrl = getLatestCovidReport(DEFAULT_MHLW_INDEX_URL)
+  if not reportUrl:
+    return 'Failed to get report URL'
+
+  summaryValues = {}
+  print(reportUrl)
+  reportSoup = getReportFromUrl(reportUrl)
+  reportDate = getReportDate(reportSoup)
+  summaryTableUrl = getSummaryTable(reportSoup)
+  reportPdfData = getPdfData(reportSoup)
+  print(reportDate)
+
+  if reportPdfData:
+    with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
+      temp.write(reportPdfData)
+      recoveries = extractRecoveryNumbers(temp.name)
+      summaryValues['prefectureRecoveries'] = recoveries
+
+  if summaryTableUrl:
+    values = extractDailySummary(summaryTableUrl, False)
+    summaryValues.update(values)
+
+  writeStatus = 'Not written'
+  if writeToSpreadsheet:
+    writeStatus = writeValues(reportDate, summaryValues)
+
+  return 'Date: {}\nURL: {}\nWriteStatus: {}\n{}'.format(reportDate, reportUrl, writeStatus, summaryValues)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
