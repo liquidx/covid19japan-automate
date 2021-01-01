@@ -1,5 +1,9 @@
 Docker image for deploying covid19japan automation scripts to a Google Cloud Run instance.
 
+# Auth
+
+`credentials.json` need to be created (see mhlw.py for info).
+
 # Development
 
 ```
