@@ -59,7 +59,7 @@ PREFECTURE_PREFIX = {
   "Osaka": "OSK",
   "Saga": "SG",
   "Saitama": "STM",
-  "Shiga": "SG",
+  "Shiga": "SHG",
   "Shimane": "SM",
   "Shizuoka": "SZ",
   "Tochigi": "TCG",
@@ -156,7 +156,6 @@ def writePatients(tabName, prefecture, count, date, deceased, source, useCountCo
     print('Unable to find tab: %s' % tabName)
     return
 
-  pprint.pprint(tabProperties)
   if useCountColumn:
     patientNumberPrefix, lastPatientNumber = PREFECTURE_PREFIX[prefecture], int(date.replace('-', ''))
   else:
@@ -168,7 +167,7 @@ def writePatients(tabName, prefecture, count, date, deceased, source, useCountCo
     patientNumberPrefix = patientNumberPrefix, 
     lastPatientNumber = lastPatientNumber,
     useCountColumn = useCountColumn)
-  pprint.pprint(result)
+  print('Updated: {} rows'.format(result['updates']['updatedRows']))
 
 
 
