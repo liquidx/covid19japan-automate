@@ -16,7 +16,7 @@ const { DateTime, Interval } = require('luxon')
 const { extractDailySummary, sortedPrefectureCounts, latestNhkArticles, prefecturesFromJa } = require('./nhk.js')
 
 const SPREADSHEET_ID = '1vkw_Lku7F_F3F_iNmFFrDq9j7-tQ6EmZPOLpLt-s3TY';
-const CREDENTIALS_PATH =  path.join(__dirname, '../credentials.json');
+const CREDENTIALS_PATH =  path.join(__dirname, './credentials.json');
 const NHKNEWS_BASE_URL = 'https://www3.nhk.or.jp';
 
 // test sheet
