@@ -13,7 +13,7 @@ const process = require('process')
 const fetch = require('node-fetch')
 const { GoogleSpreadsheet } = require('google-spreadsheet')
 const { DateTime, Interval } = require('luxon')
-const { extractDailySummary, sortedPrefectureCounts, latestNhkArticles, prefectureLookup } = require('./nhk.js')
+const { extractDailySummary, sortedPrefectureCounts, latestNhkArticles, prefecturesFromJa } = require('./nhk.js')
 
 const SPREADSHEET_ID = '1vkw_Lku7F_F3F_iNmFFrDq9j7-tQ6EmZPOLpLt-s3TY';
 const CREDENTIALS_PATH =  path.join(__dirname, '../credentials.json');
@@ -169,7 +169,7 @@ const getAllArticles = () => {
       new RegExp('([\\d]+)人の死亡確認'),
       new RegExp('([\\d]+)人死亡')
     ]
-    const prefecturePattern = new RegExp('(' + Object.keys(prefectureLookup).join('|') + ')')
+    const prefecturePattern = new RegExp('(' + Object.keys(prefecturesFromJa).join('|') + ')')
 
     for (let article of articles) {
       let date = DateTime.fromJSDate(new Date(article.pubDate)).toISODate()
@@ -196,7 +196,7 @@ const getAllArticles = () => {
           date: date,
           title: article.title,
           source: url,
-          prefecture: prefectureLookup[prefectureMatch[1]],
+          prefecture: prefecturesFromJa[prefectureMatch[1]],
         }
         if (confirmedMatch) {
           report['confirmed'] = confirmedMatch
