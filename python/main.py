@@ -12,7 +12,7 @@ def hello_world():
     name = os.environ.get("NAME", "World")
     return "Hello {}!".format(name)
 
-@app.route('/reporturl')
+@app.route('/mhlw/reporturl')
 def report_url():
   url = mhlw.getLatestCovidReport(mhlw.DEFAULT_MHLW_INDEX_URL)
   return json.dumps({'result': {
