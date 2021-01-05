@@ -22,8 +22,6 @@ const NHKNEWS_BASE_URL = 'https://www3.nhk.or.jp';
 // test sheet
 //const SPREADSHEET_ID = '1hVMsINcHicoq-Ed68_puYlInLusnweniqG3As-lSF_o';
 
-
-
 const insertColumn = async (sheet, columnIndex) => {
   await sheet._makeSingleUpdateRequest('insertRange', 
   {
@@ -113,47 +111,49 @@ const writeNhkSummary = async (credentialsJson, dateString, url, prefectureCount
   todayCell.value = dateValue
 
   await nhkSheet.saveUpdatedCells()
+  return 'OK'
 }
 
 const extractAndWriteSummary = (date, url, shouldWrite) => {
-  console.log(url)
-  extractDailySummary(url, fetch)
-  .then(values => {
-    let prefectureCounts = sortedPrefectureCounts(values)
-    let otherCounts = [
-      values.portQuarantineCount,
-      values.critical,
-      values.deceased,
-      values.recoveredJapan,
-      values.recoveredTotal
-    ]
+  return extractDailySummary(url, fetch)
+    .then(async values => {
+      let prefectureCounts = sortedPrefectureCounts(values)
+      let otherCounts = [
+        values.portQuarantineCount,
+        values.critical,
+        values.deceased,
+        values.recoveredJapan,
+        values.recoveredTotal
+      ]
 
-    // Abort if any of the numbers look weird
-    let errors = ''
-    for (let count of otherCounts) {
-      if (!count) {
-        errors = 'otherCounts has 0s'
+      // Abort if any of the numbers look weird
+      let errors = ''
+      for (let count of otherCounts) {
+        if (!count) {
+          errors = 'otherCounts has 0s'
+        }
       }
-    }
-    if (prefectureCounts.length < 47) {
-      errors ='prefectureCounts are less than 47'
-    }
-    for (let count of prefectureCounts) {
-      if (!count) {
-        errors = 'prefectureCounts has 0s'
+      if (prefectureCounts.length < 47) {
+        errors ='prefectureCounts are less than 47'
       }
-    }
+      for (let count of prefectureCounts) {
+        if (!count) {
+          errors = 'prefectureCounts has 0s'
+        }
+      }
 
-    if (!errors && shouldWrite) {
-      writeNhkSummary(googleCredentials(), date, url, prefectureCounts, otherCounts)
-    } else {
-      console.log(prefectureCounts)
-      console.log(otherCounts)
-      if (errors) {
-        console.log(errors)
+      let writeStatus = ''
+      if (!errors && shouldWrite) {
+        writeStatus = await writeNhkSummary(googleCredentials(), date, url, prefectureCounts, otherCounts)
       }
-    }
-  })
+
+      return {
+        date,
+        counts: values,
+        writeStatus,
+        errors,
+      }
+    })
 }
 
 const getAllArticles = () => {
@@ -162,7 +162,8 @@ const getAllArticles = () => {
 
     // headline patterns
     const confirmedPatientPatterns = [
-      new RegExp('([\\d]+)人感染確認', 'iu')
+      new RegExp('([\\d]+)人感染確認', 'iu'),
+      new RegExp('([\\d]+)人の感染確認', 'iu')
     ]
     const deceasedPatientPatterns = [
       new RegExp('([\\d]+)人の死亡確認'),
@@ -204,10 +205,14 @@ const getAllArticles = () => {
           report['deaths'] = deathMatch
         }
         structuredReports.push(report)
+      } else {
+        structuredReports.push({
+          date: date,
+          title: article.title,
+          source: url
+        })
       }
-
-      //console.log(date, article.title, url)
-    }
+    } 
     return structuredReports
   })
 }
@@ -224,14 +229,10 @@ const findAndWriteSummary = (date, writeToSpreadsheet) => {
     }
 
     if (summaryArticleUrl) {
-      extractAndWriteSummary(date, summaryArticleUrl, writeToSpreadsheet)
+      console.log(summaryArticleUrl)
+      return extractAndWriteSummary(date, summaryArticleUrl, writeToSpreadsheet)
     } else {
-      console.error('Not able to find articles')
-      for (let article of articles) {
-        let date = DateTime.fromJSDate(new Date(article.pubDate)).toISODate()
-        console.log(date, article.title, article.link)
-      }
-      return
+      return {result: {error: 'No summary article found'}}
     }
   })
 }

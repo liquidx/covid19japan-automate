@@ -6,8 +6,9 @@
   "scripts": {
     "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
     "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
-    "logs-summary": "gcloud functions logs read nhkSummary",
-    "logs-articles": "gcloud functions logs read nhkArticles"
+    "logs-summary": "gcloud functions logs read nhkSummary --project covid19-analysis ",
+    "logs-articles": "gcloud functions logs read nhkArticles --project covid19-analysis ",
+    "debug": "npx @google-cloud/functions-framework --target=nhkArticles"
   },
   "repository": {
     "type": "git",
@@ -29,5 +30,8 @@
     "lodash": "^4.17.20",
     "luxon": "^1.25.0",
     "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "@google-cloud/functions-framework": "^1.7.1"
   }
 }

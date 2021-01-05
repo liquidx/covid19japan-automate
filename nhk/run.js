@@ -33,7 +33,9 @@ const main = async () => {
       }
     })
   } else  if (!program.url) {
-    findAndWriteSummary(program.date, program.write)
+    findAndWriteSummary(program.date, program.write).then(result => {
+      console.log(result)
+    })
   } else {
     extractAndWriteSummary(program.date, program.url, program.write)
   }
