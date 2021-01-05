@@ -4,8 +4,8 @@
   "description": "Tools for automating extraction of data from NHK articles",
   "main": "index.js",
   "scripts": {
-    "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
-    "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
+    "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=120",
+    "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
     "logs-summary": "gcloud functions logs read nhkSummary --project covid19-analysis ",
     "logs-articles": "gcloud functions logs read nhkArticles --project covid19-analysis ",
     "debug-summary": "npx @google-cloud/functions-framework --target=nhkSummary",
