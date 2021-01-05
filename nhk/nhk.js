@@ -5,62 +5,107 @@ const urlWithProxy = (url) => {
   return url;
 };
 
-const prefectureLookup = _.fromPairs(
-  _.map(
-    [
-      "愛知	Aichi",
-      "秋田	Akita",
-      "青森	Aomori",
-      "千葉	Chiba",
-      "愛媛	Ehime",
-      "福井	Fukui",
-      "福岡	Fukuoka",
-      "福島	Fukushima",
-      "岐阜	Gifu",
-      "群馬	Gunma",
-      "広島	Hiroshima",
-      "北海道	Hokkaido",
-      "兵庫	Hyogo",
-      "茨城	Ibaraki",
-      "石川	Ishikawa",
-      "岩手	Iwate",
-      "香川	Kagawa",
-      "鹿児島	Kagoshima",
-      "神奈川	Kanagawa",
-      "高知	Kochi",
-      "熊本	Kumamoto",
-      "京都	Kyoto",
-      "三重	Mie",
-      "宮城	Miyagi",
-      "宮崎	Miyazaki",
-      "長野	Nagano",
-      "長崎	Nagasaki",
-      "奈良	Nara",
-      "新潟	Niigata",
-      "大分	Oita",
-      "岡山	Okayama",
-      "沖縄	Okinawa",
-      "大阪	Osaka",
-      "佐賀	Saga",
-      "埼玉	Saitama",
-      "滋賀	Shiga",
-      "島根	Shimane",
-      "静岡	Shizuoka",
-      "栃木	Tochigi",
-      "徳島	Tokushima",
-      "東京都	Tokyo",
-      "鳥取	Tottori",
-      "富山	Toyama",
-      "和歌山	Wakayama",
-      "山形	Yamagata",
-      "山口	Yamaguchi",
-      "山梨	Yamanashi",
-    ],
-    (v) => {
-      return v.split("\t");
-    }
-  )
-);
+const prefecturesFromJaShort = {
+  "愛知":"Aichi",
+  "秋田":"Akita",
+  "青森":"Aomori",
+  "千葉":"Chiba",
+  "愛媛":"Ehime",
+  "福井":"Fukui",
+  "福岡":"Fukuoka",
+  "福島":"Fukushima",
+  "岐阜":"Gifu",
+  "群馬":"Gunma",
+  "広島":"Hiroshima",
+  "北海道":"Hokkaido",
+  "兵庫":"Hyogo",
+  "茨城":"Ibaraki",
+  "石川":"Ishikawa",
+  "岩手":"Iwate",
+  "香川":"Kagawa",
+  "鹿児島":"Kagoshima",
+  "神奈川":"Kanagawa",
+  "高知":"Kochi",
+  "熊本":"Kumamoto",
+  "京都":"Kyoto",
+  "三重":"Mie",
+  "宮城":"Miyagi",
+  "宮崎":"Miyazaki",
+  "長野":"Nagano",
+  "長崎":"Nagasaki",
+  "奈良":"Nara",
+  "新潟":"Niigata",
+  "大分":"Oita",
+  "岡山":"Okayama",
+  "沖縄":"Okinawa",
+  "大阪":"Osaka",
+  "佐賀":"Saga",
+  "埼玉":"Saitama",
+  "滋賀":"Shiga",
+  "島根":"Shimane",
+  "静岡":"Shizuoka",
+  "栃木":"Tochigi",
+  "徳島":"Tokushima",
+  "東京都":"Tokyo",
+  "鳥取":"Tottori",
+  "富山":"Toyama",
+  "和歌山":"Wakayama",
+  "山形":"Yamagata",
+  "山口":"Yamaguchi",
+  "山梨":"Yamanashi",
+}
+
+const prefecturesFromJaLong = {
+  "愛知県":"Aichi",
+  "秋田県":"Akita",
+  "青森県":"Aomori",
+  "千葉県":"Chiba",
+  "愛媛県":"Ehime",
+  "福井県":"Fukui",
+  "福岡県":"Fukuoka",
+  "福島県":"Fukushima",
+  "岐阜県":"Gifu",
+  "群馬県":"Gunma",
+  "広島県":"Hiroshima",
+  "北海道":"Hokkaido",
+  "兵庫県":"Hyogo",
+  "茨城県":"Ibaraki",
+  "石川県":"Ishikawa",
+  "岩手県":"Iwate",
+  "香川県":"Kagawa",
+  "鹿児島県":"Kagoshima",
+  "神奈川県":"Kanagawa",
+  "高知県":"Kochi",
+  "熊本県":"Kumamoto",
+  "京都府":"Kyoto",
+  "三重県":"Mie",
+  "宮城県":"Miyagi",
+  "宮崎県":"Miyazaki",
+  "長野県":"Nagano",
+  "長崎県":"Nagasaki",
+  "奈良県":"Nara",
+  "新潟県":"Niigata",
+  "大分県":"Oita",
+  "岡山県":"Okayama",
+  "沖縄県":"Okinawa",
+  "大阪府":"Osaka",
+  "佐賀県":"Saga",
+  "埼玉県":"Saitama",
+  "滋賀県":"Shiga",
+  "島根県":"Shimane",
+  "静岡県":"Shizuoka",
+  "栃木県":"Tochigi",
+  "徳島県":"Tokushima",
+  "東京都":"Tokyo",
+  "鳥取県":"Tottori",
+  "富山県":"Toyama",
+  "和歌山県":"Wakayama",
+  "山形県":"Yamagata",
+  "山口県":"Yamaguchi",
+  "山梨県":"Yamanashi",
+}
+
+const prefecturesFromJa = Object.assign(Object.assign({}, prefecturesFromJaShort), prefecturesFromJaLong)
 
 const normalizeFixedWidthNumbers = (v) => {
   return v
@@ -104,7 +149,7 @@ const extractDailySummary = (url, fetchImpl, useProxy) => {
       let dom = cheerio.load(text);
       let contents = dom("section.content--detail-main").text();
 
-      for (let prefectureName of Object.keys(prefectureLookup)) {
+      for (let prefectureName of Object.keys(prefecturesFromJaLong)) {
         const prefecturePattern = new RegExp(
           prefectureName + "は[※]?([0-9０-９万]+)人",
           "igu"
@@ -178,7 +223,7 @@ const extractDailySummary = (url, fetchImpl, useProxy) => {
 
 const prefectureCountsInEnglish = (result) => {
   const prefectureCountsInEn = _.mapKeys(result.prefectureCounts, (v, k) => {
-    return prefectureLookup[k];
+    return prefecturesFromJaLong[k];
   });
   const translatedResults = Object.assign({}, result);
   translatedResults.prefectureCounts = prefectureCountsInEn;
@@ -188,7 +233,7 @@ const prefectureCountsInEnglish = (result) => {
 const sortedPrefectureCounts = (values) => {
   let englishPrefectureCounts = prefectureCountsInEnglish(values);
   let counts = [];
-  for (let prefectureName of _.sortBy(_.values(prefectureLookup))) {
+  for (let prefectureName of _.sortBy(_.values(prefecturesFromJaLong))) {
     let count = englishPrefectureCounts["prefectureCounts"][prefectureName];
     if (!count) {
       count = 0;
@@ -228,6 +273,8 @@ const latestNhkArticles = async (fetchImpl, numberOfPages) => {
 
 exports.extractDailySummary = extractDailySummary;
 exports.sortedPrefectureCounts = sortedPrefectureCounts;
-exports.prefectureLookup = prefectureLookup;
+exports.prefecturesFromJaLong = prefecturesFromJaLong;
+exports.prefecturesFromJaShort = prefecturesFromJaShort;
+exports.prefecturesFromJa = prefecturesFromJa;
 exports.prefectureCountsInEnglish = prefectureCountsInEnglish;
 exports.latestNhkArticles = latestNhkArticles;
