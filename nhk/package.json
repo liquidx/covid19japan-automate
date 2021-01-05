@@ -8,7 +8,8 @@
     "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
     "logs-summary": "gcloud functions logs read nhkSummary --project covid19-analysis ",
     "logs-articles": "gcloud functions logs read nhkArticles --project covid19-analysis ",
-    "debug": "npx @google-cloud/functions-framework --target=nhkArticles"
+    "debug-summary": "npx @google-cloud/functions-framework --target=nhkSummary",
+    "debug-articles": "npx @google-cloud/functions-framework --target=nhkArticles"
   },
   "repository": {
     "type": "git",
