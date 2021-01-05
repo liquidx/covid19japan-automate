@@ -1,0 +1,33 @@
+{
+  "name": "covid19japan-nhk",
+  "version": "1.0.0",
+  "description": "Tools for automating extraction of data from NHK articles",
+  "main": "index.js",
+  "scripts": {
+    "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
+    "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --runtime nodejs12 --trigger-http --allow-unauthenticated",
+    "logs-summary": "gcloud functions logs read nhkSummary",
+    "logs-articles": "gcloud functions logs read nhkArticles"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liquidx/covid19japan-automate.git"
+  },
+  "keywords": [
+    "nhk"
+  ],
+  "author": "Alastair Tse <alastair@liquidx.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/liquidx/covid19japan-automate/issues"
+  },
+  "homepage": "https://github.com/liquidx/covid19japan-automate#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.5",
+    "commander": "^6.2.1",
+    "google-spreadsheet": "^3.1.15",
+    "lodash": "^4.17.20",
+    "luxon": "^1.25.0",
+    "node-fetch": "^2.6.1"
+  }
+}
