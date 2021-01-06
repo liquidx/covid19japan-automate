@@ -74,6 +74,70 @@ PREFECTURE_PREFIX = {
   "Port Quarantine": "PRT"
 }
 
+def getRecentPatientRows(sheet, tabProperties):
+  rowsToFetch = 100
+  totalRows = tabProperties['gridProperties']['rowCount']
+
+  getFromRow = totalRows - rowsToFetch
+
+  rows = sheet.values().get(spreadsheetId=SPREADSHEET_ID, 
+      range="'%s'!A%d:L" % (tabProperties['title'], getFromRow)).execute()
+
+  return {'startRow': getFromRow, 'rows': rows['values']}
+
+def updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, deceased, source):
+  """
+  Updates the patient count in the sheet. If the row for that prefecture on the same date
+  already exists but the count different, the count number will be modified.
+
+  If the row doesn't exist, then will be appended.
+
+  This assumes the row is using the countFormat.
+  """
+  result = getRecentPatientRows(sheet, tabProperties)
+
+  # Find existing row that we already added.
+  PATIENT_ID_COL = 0
+  DATE_COL = 3
+  PREFECTURE_COL = 9
+  STATUS_COL = 10
+  COUNT_COL = 11
+  COUNT_COL_A1 = 'L'
+  foundRow = False
+  for i in range(0, len(result['rows'])):
+    rowNumber = result['startRow'] + i
+    row = result['rows'][i]
+    if row[DATE_COL] == date and row[PREFECTURE_COL] == prefecture:
+      isDeceased = row[STATUS_COL] == 'Deceased'
+      if deceased and isDeceased:
+        foundRow = True
+      if not deceased and row[STATUS_COL] == '':
+        foundRow = True
+      
+    if foundRow:
+      if int(row[COUNT_COL]) == count:
+        print('Found row but the count was identical: %s %s' % (prefecture, row[COUNT_COL]))
+        return
+      else:
+        # update the count with the new number
+        rangeString= "'%s'!%s%d:%s%d" % (tabProperties['title'], COUNT_COL_A1, rowNumber, COUNT_COL_A1, rowNumber)
+        print(rangeString)
+        result = sheet.values().update(
+          spreadsheetId=SPREADSHEET_ID, 
+          range=rangeString,
+          valueInputOption='USER_ENTERED',
+          body = {'values': [[count]]}).execute()
+        return result
+
+  # if we get here, we didn't find the row, so we'll have to append a row.
+  patientNumberPrefix, lastPatientNumber = PREFECTURE_PREFIX[prefecture], int(date.replace('-', ''))
+  return appendRows(sheet, tabProperties, prefecture, count, date, 
+      deceased = deceased, 
+      source = source, 
+      patientNumberPrefix = patientNumberPrefix, 
+      lastPatientNumber = lastPatientNumber,
+      useCountColumn = True)
+
 def getPatientNumberColumn(sheet, tabProperties):
   patientNumbers = sheet.values().get(spreadsheetId=SPREADSHEET_ID, 
       range="'%s'!A:A" % (tabProperties['title'])).execute()
@@ -138,7 +202,7 @@ def appendRows(sheet, tabProperties, prefecture, count, date, deceased=False, so
     responseValueRenderOption='FORMATTED_VALUE',
     body={'majorDimension': 'ROWS', 'values': rows}).execute()
 
-def writePatients(tabName, prefecture, count, date, deceased, source, useCountColumn):  
+def writePatients(tabName, prefecture, count, date, deceased, source, useCountColumn=True, update=True):  
   creds = service_account.Credentials.from_service_account_file(
     './credentials.json', scopes=SCOPES
   )
@@ -154,27 +218,37 @@ def writePatients(tabName, prefecture, count, date, deceased, source, useCountCo
 
   if not tabProperties:
     print('Unable to find tab: %s' % tabName)
-    return
+    return 0
 
-  if useCountColumn:
-    patientNumberPrefix, lastPatientNumber = PREFECTURE_PREFIX[prefecture], int(date.replace('-', ''))
+  if update:
+    result = updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, deceased, source)
+    if result and 'updates' in result:
+      return result['updates']['updatedRows']
+    elif result:
+      return result['updatedRows']
+    return 0
   else:
-    patientNumberPrefix, lastPatientNumber = getPatientNumberColumn(sheet, tabProperties)
+    if useCountColumn:
+      patientNumberPrefix, lastPatientNumber = PREFECTURE_PREFIX[prefecture], int(date.replace('-', ''))
+    else:
+      patientNumberPrefix, lastPatientNumber = getPatientNumberColumn(sheet, tabProperties)
 
-  result = appendRows(sheet, tabProperties, prefecture, count, date, 
-    deceased = deceased, 
-    source = source, 
-    patientNumberPrefix = patientNumberPrefix, 
-    lastPatientNumber = lastPatientNumber,
-    useCountColumn = useCountColumn)
-  print('Updated: {} rows'.format(result['updates']['updatedRows']))
-
+    result = appendRows(sheet, tabProperties, prefecture, count, date, 
+      deceased = deceased, 
+      source = source, 
+      patientNumberPrefix = patientNumberPrefix, 
+      lastPatientNumber = lastPatientNumber,
+      useCountColumn = useCountColumn)
+    if result:
+      return result['updates']['updatedRows']
+    return 0
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('prefecture')
   parser.add_argument('count', type=int)
+  parser.add_argument('--update', action='store_true', default=True)
   parser.add_argument('--tab', default='Patient Data')
   parser.add_argument('--deaths', action="store_true")
   parser.add_argument('--date', default=datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -190,4 +264,5 @@ if __name__ == '__main__':
     url = urllib.parse.urlsplit(args.source)
     args.source = urllib.parse.urlunsplit((url.scheme, url.netloc, url.path, None, None))
 
-  writePatients(tab, args.prefecture, int(args.count), args.date, args.deaths, args.source, args.use_count_column)
+  rowsUpdated = writePatients(tab, args.prefecture, int(args.count), args.date, args.deaths, args.source, args.use_count_column, update=args.update)
+  print('Updates %d rows.' % rowsUpdated)
