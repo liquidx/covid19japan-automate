@@ -6,14 +6,24 @@ const {
   getAllArticles,
 } = require("./nhk_spreadsheet.js");
 
-const addPatientsCommand = (article) => {
+const addPatientsCommand = (article, rpc) => {
   let command = ''
   if (article.prefecture) {
     if (article.confirmed) {
-      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
+      if (rpc) {
+        let encodedUrl = encodeURIComponent(article.source)
+        command += `<a href="https://covid19japan-auto.liquidx.net/patients/update?prefecture=${article.prefecture}&date=${article.date}&count=${article.confirmed}&source=${encodedUrl}">Update New Cases</a>`
+      } else {
+        command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
+      }
     } 
     if (article.deaths) {
-      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
+      if (rpc) {
+        let encodedUrl = encodeURIComponent(article.source)
+        command += `<br><a href="https://covid19japan-auto.liquidx.net/patients/update?prefecture=${article.prefecture}&date=${article.date}&count=${article.deaths}&source=${encodedUrl}&deceased=true">Update Deceased</a>`
+      } else {
+        command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
+      }
     }
   }
   return command
@@ -44,10 +54,15 @@ exports.nhkArticles = (req, res) => {
       outputFormat = req.query.output;
     }
 
+    let rpc = true
+    if (req.query.command) {
+      rpc = false
+    }
+
     if (outputFormat == "html") {
       let htmlOutput = "";
       for (let article of articles) {
-        let command = addPatientsCommand(article)
+        let command = addPatientsCommand(article, rpc)
         htmlOutput += `<tr>
          <td${article.date}</td>
          <td>${article.prefecture || ''}</td>
