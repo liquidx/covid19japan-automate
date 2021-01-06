@@ -1,8 +1,10 @@
 import os
 
 from flask import Flask
+from flask import request
 import json
 import mhlw
+import sync_patients
 
 app = Flask(__name__)
 
@@ -11,6 +13,16 @@ app = Flask(__name__)
 def hello_world():
     name = os.environ.get("NAME", "World")
     return "Hello {}!".format(name)
+
+@app.route('/patient/update')
+def patient_update():
+  prefecture = request.args.get('prefecture')
+  count = request.args.get('count')
+  date = request.args.get('date')
+  source = request.args.get('source')
+  deceased = request.args.get('deceased')
+  updatedRows = sync_patients.writePatients(prefecture, count, date, deceased, source)
+  return updatedRows
 
 @app.route('/mhlw/reporturl')
 def report_url():
