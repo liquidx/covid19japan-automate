@@ -13,13 +13,20 @@ Docker image for deploying covid19japan automation scripts to a Google Cloud Run
 We use Cloud Run and Cloud Build because these python tools need some extra dependencies
 that cannot be accessed in the Python Cloud Functions. (tesseract-ocr)
 
-## Development
+## Development Setup
 ```
 cd python
 python3 -m venv venv
 . venv/bin/activate
 pip3 install -r requirements.txt
 pip3 install Flask
+```
+
+## Development
+
+```
+cd python
+. venv/bin/activate
 FLASK_APP=main.py flask run
 ```
 
