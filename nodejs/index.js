@@ -10,10 +10,10 @@ const addPatientsCommand = (article) => {
   let command = ''
   if (article.prefecture) {
     if (article.confirmed) {
-      command += `python3 add_patient.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
+      command += `python3 add_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
     } 
     if (article.deaths) {
-      command += `python3 add_patient.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed} --deaths; `
+      command += `python3 add_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed} --deaths; `
     }
   }
   return command
