@@ -225,6 +225,7 @@ const findAndWriteSummary = (date, writeToSpreadsheet) => {
     for (let article of articles) {
       if (article.link.match('/' + matchDate + '/') && article.title.match(summaryArticleTitlePattern)) { 
         summaryArticleUrl = NHKNEWS_BASE_URL + article.link
+        break
       }
     }
 
