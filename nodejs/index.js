@@ -13,7 +13,7 @@ const addPatientsCommand = (article) => {
       command += `python3 add_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
     } 
     if (article.deaths) {
-      command += `python3 add_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed} --deaths; `
+      command += `python3 add_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
     }
   }
   return command
