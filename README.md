@@ -15,11 +15,17 @@ that cannot be accessed in the Python Cloud Functions. (tesseract-ocr)
 
 ## Development
 ```
-./build.sh
+cd python
+python3 -m venv venv
+. venv/bin/activate
+pip3 install -r requirements.txt
+pip3 install Flask
+FLASK_APP=main.py flask run
 ```
 
 ## Deployment
 ```
+./build.sh
 ./deploy.sh
 ```
 
