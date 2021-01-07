@@ -163,7 +163,8 @@ const getAllArticles = () => {
     // headline patterns
     const confirmedPatientPatterns = [
       new RegExp('([\\d]+)人感染確認', 'iu'),
-      new RegExp('([\\d]+)人の感染確認', 'iu')
+      new RegExp('([\\d]+)人の感染確認', 'iu'),
+      new RegExp('感染確認([\\d]+)人', 'iu'),
     ]
     const deceasedPatientPatterns = [
       new RegExp('([\\d]+)人の死亡確認'),
