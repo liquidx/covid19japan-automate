@@ -6,24 +6,31 @@ const {
   getAllArticles,
 } = require("./nhk_spreadsheet.js");
 
-const addPatientsCommand = (article, rpc) => {
+const countWithActionUrl = (article, confirmedOrDeath) => {
+  let encodedUrl = encodeURIComponent(article.source)
+  if (confirmedOrDeath == 'confirmed') {
+    if (article.confirmed) {
+      return `<a target="_blank" href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&count=${article.confirmed}">${article.confirmed}</a>`
+    } else {
+      return ''
+    }
+  } else if (confirmedOrDeath == 'deaths') {
+    if (article.deaths) {
+      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&count=${article.deaths}&deceased=true">${article.deaths}</a>`
+    } else {
+      return ''
+    }
+  }
+}
+
+const addPatientsCommand = (article) => {
   let command = ''
   if (article.prefecture) {
     if (article.confirmed) {
-      if (rpc) {
-        let encodedUrl = encodeURIComponent(article.source)
-        command += `<a href="https://covid19japan-auto.liquidx.net/patients/update?prefecture=${article.prefecture}&date=${article.date}&count=${article.confirmed}&source=${encodedUrl}">Update New Cases</a>`
-      } else {
-        command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
-      }
+      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
     } 
     if (article.deaths) {
-      if (rpc) {
-        let encodedUrl = encodeURIComponent(article.source)
-        command += `<br><a href="https://covid19japan-auto.liquidx.net/patients/update?prefecture=${article.prefecture}&date=${article.date}&count=${article.deaths}&source=${encodedUrl}&deceased=true">Update Deceased</a>`
-      } else {
-        command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
-      }
+      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
     }
   }
   return command
@@ -62,20 +69,26 @@ exports.nhkArticles = (req, res) => {
     if (outputFormat == "html") {
       let htmlOutput = "";
       for (let article of articles) {
-        let command = addPatientsCommand(article, rpc)
+        let confirmed =  countWithActionUrl(article, 'confirmed')
+        let deaths =  countWithActionUrl(article, 'deaths')
         htmlOutput += `<tr>
          <td>${article.date}</td>
          <td>${article.prefecture || ''}</td>
-         <td>${article.confirmed || 0}</td>
-         <td>${article.deaths || 0}</td>
+         <td>${confirmed}</td>
+         <td>${deaths}</td>
          <td><a href="${article.source}">${article.title}</a></td>
-         <td>${command}</td>
          </tr>`;
       }
       res.send(
-        `<html><body style="font-family: sans-serif;"><table>
-        <tr><th>Date</th><th>Prefecture</th><th>Confirmed</th><th>Deaths</th></tr>
-        ${htmlOutput}</table></body</html>`
+        `<html>
+         <head><style>th { text-align: left; background: #ddd; } td { padding: 2px; border-bottom: 1px solid #ddd; }</style></head>
+         <body style="font-family: sans-serif;">
+         <table>
+          <tr><th>Date</th><th>Prefecture</th><th>Confirmed</th><th>Deaths</th><th>Source</th></tr>
+         ${htmlOutput}
+         </table>
+         </body>
+         </html>`
       );
     } else {
       res.send(JSON.stringify(articles));
