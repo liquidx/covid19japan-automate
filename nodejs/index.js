@@ -64,7 +64,7 @@ exports.nhkArticles = (req, res) => {
       for (let article of articles) {
         let command = addPatientsCommand(article, rpc)
         htmlOutput += `<tr>
-         <td${article.date}</td>
+         <td>${article.date}</td>
          <td>${article.prefecture || ''}</td>
          <td>${article.confirmed || 0}</td>
          <td>${article.deaths || 0}</td>
