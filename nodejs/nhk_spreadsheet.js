@@ -168,7 +168,8 @@ const getAllArticles = () => {
     ]
     const deceasedPatientPatterns = [
       new RegExp('([\\d]+)人の死亡確認'),
-      new RegExp('([\\d]+)人死亡')
+      new RegExp('([\\d]+)人死亡'),
+      new RegExp('([\\d]+)人が死亡'),
     ]
     const prefecturePattern = new RegExp('(' + Object.keys(prefecturesFromJa).join('|') + ')')
 
