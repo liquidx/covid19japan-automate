@@ -46,7 +46,7 @@ const prefecturesFromJaShort = {
   "静岡":"Shizuoka",
   "栃木":"Tochigi",
   "徳島":"Tokushima",
-  "東京都":"Tokyo",
+  "東京":"Tokyo",
   "鳥取":"Tottori",
   "富山":"Toyama",
   "和歌山":"Wakayama",
