@@ -87,28 +87,39 @@ const writeNhkSummary = async (credentialsJson, dateString, url, prefectureCount
     await copyPasteColumn(nhkSheet, 7, 8)
   }
 
-
   // Load cells again in case we inserted a new column.
   await nhkSheet.loadCells('H1:H59')
   dateCell = nhkSheet.getCellByA1('H1')
   linkCell = nhkSheet.getCellByA1('H2')
 
-  dateCell.value = dateValue
-  linkCell.formula = `=HYPERLINK("${url}", "Link")`
+  if (dateCell.value != dateValue) {
+    dateCell.value = dateValue
+  }
+
+  let linkFormula = `=HYPERLINK("${url}", "Link")`
+  if (linkCell.formula != linkFormula) {
+    linkCell.formula = linkFormula
+  }
 
   for (let i = 0; i < prefectureCounts.length; i++) {
     let cell = nhkSheet.getCell(3 + i, 7)
-    cell.value = prefectureCounts[i]
+    if (cell.value != prefectureCounts[i]) {
+      cell.value = prefectureCounts[i]
+    }
   }
   
   for (let i = 0; i < otherCounts.length; i++) {
     let cell = nhkSheet.getCell(50 + i, 7)
-    cell.value = otherCounts[i]
+    if (cell.value != otherCounts[i]) {
+      cell.value = otherCounts[i]
+    }
   }
 
   // Write the current date in to the A2 cell.
   todayCell = nhkSheet.getCellByA1('A2')
-  todayCell.value = dateValue
+  if (todayCell.value != dateValue) {
+    todayCell.value = dateValue
+  }
 
   await nhkSheet.saveUpdatedCells()
   return 'OK'
