@@ -10,13 +10,17 @@ const countWithActionUrl = (article, confirmedOrDeath) => {
   let encodedUrl = encodeURIComponent(article.source)
   if (confirmedOrDeath == 'confirmed') {
     if (article.confirmed) {
-      return `<a target="_blank" href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&count=${article.confirmed}">${article.confirmed}</a>`
+      return `<a target="_blank" href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&cases=${article.confirmed}">${article.confirmed}</a>`
+    } else if (article.prefecture) {
+      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}">?</a>`
     } else {
-      return ''
+      return ''      
     }
   } else if (confirmedOrDeath == 'deaths') {
     if (article.deaths) {
-      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&count=${article.deaths}&deceased=true">${article.deaths}</a>`
+      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&deceased=${article.deaths}">${article.deaths}</a>`
+    } else if (article.prefecture) {
+      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}">?</a>`
     } else {
       return ''
     }

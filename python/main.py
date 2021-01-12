@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask import request
+from flask import render_template
 import json
 import mhlw
 import sync_patients
@@ -17,16 +18,24 @@ def hello_world():
 @app.route('/patients/update')
 def patient_update():
   prefecture = request.args.get('prefecture')
-  count = request.args.get('count')
+  cases = request.args.get('cases')
   date = request.args.get('date')
   source = request.args.get('source')
   deceased = request.args.get('deceased')
-  if not prefecture or not count or not date:
-    return json.dumps({'error': 'Required parameters prefecture=, count= and date= not found.'})
+  if not prefecture or not date:
+    return json.dumps({'error': 'Required parameters prefecture= and date= not found.'})
+
+  if not cases and not deceased:
+    # Need to prompt for the number.
+    return render_template('patient_update.html', prefecture=prefecture, date=date, source=source, cases=cases, deceased=deceased)
 
   print(locals())
+  if cases:
+    cases = int(cases)
+  if deceased:
+    deceased = int(deceased)
 
-  updatedRows = sync_patients.writePatients(prefecture, count, date, deceased, source)
+  updatedRows = sync_patients.writePatients(prefecture, date, cases, deceased, source)
   return json.dumps({'updateRows': updatedRows})
 
 @app.route('/mhlw/reporturl')

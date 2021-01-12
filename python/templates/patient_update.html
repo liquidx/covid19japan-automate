@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <style>
+      input[type="text"] {
+        width: 400px;
+        padding: 0.25em;
+      }
+      form {
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="/patients/update">
+      <input type="text" name="prefecture" value="{% if prefecture %}{{prefecture}}{% endif %}" placeholder="prefecture">
+      <input type="text" name="date" value="{% if date %}{{date}}{% endif %}" placeholder="date">
+      <input type="text" name="source" value="{% if date %}{{source}}{% endif %}" placeholder="source">
+      <input type="text" name="cases" value="{% if cases %}{{cases}}{% endif %}" placeholder="cases">
+      <input type="text" name="deceased" value="{% if deceased %}{{deceased}}{% endif %}" placeholder="deceased">
+      <input type="submit">
+    </form>
+  </body>
+</html>

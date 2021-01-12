@@ -85,7 +85,7 @@ def getRecentPatientRows(sheet, tabProperties):
 
   return {'startRow': getFromRow, 'rows': rows['values']}
 
-def updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, deceased, source):
+def updatePatientCountForDate(sheet, tabProperties, prefecture, date, cases, deceased, source):
   """
   Updates the patient count in the sheet. If the row for that prefecture on the same date
   already exists but the count different, the count number will be modified.
@@ -115,6 +115,7 @@ def updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, dec
         foundRow = True
       
     if foundRow:
+      count = deceased if deceased else count
       if int(row[COUNT_COL]) == count:
         print('Found row but the count was identical: %s %s' % (prefecture, row[COUNT_COL]))
         return
@@ -131,7 +132,8 @@ def updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, dec
 
   # if we get here, we didn't find the row, so we'll have to append a row.
   patientNumberPrefix, lastPatientNumber = PREFECTURE_PREFIX[prefecture], int(date.replace('-', ''))
-  return appendRows(sheet, tabProperties, prefecture, count, date, 
+  return appendRows(sheet, tabProperties, prefecture, date, 
+      cases = cases,
       deceased = deceased, 
       source = source, 
       patientNumberPrefix = patientNumberPrefix, 
@@ -150,7 +152,7 @@ def getPatientNumberColumn(sheet, tabProperties):
     return (isAlphaNumericPattern.group(1), int(isAlphaNumericPattern.group(2)))
   return ('', int(lastPatientNumber))
 
-def appendRows(sheet, tabProperties, prefecture, count, date, deceased=False, source='', patientNumberPrefix='', lastPatientNumber=0, useCountColumn=False):
+def appendRows(sheet, tabProperties, prefecture, date, cases=0, deceased=0, source='', patientNumberPrefix='', lastPatientNumber=0, useCountColumn=False):
   patientNumber = lastPatientNumber
   rows = []
   deceasedValue =  'Deceased' if deceased else ''
@@ -168,12 +170,13 @@ def appendRows(sheet, tabProperties, prefecture, count, date, deceased=False, so
         '',  # detectedCity
         prefecture,
         'Deceased' if deceased else '',
-        count,
+        deceased if deceased else cases,
         '',
         source
     ])
   else:
-    for i in range(count):
+    rowCount = deceased if deceased else cases
+    for i in range(rowCount):
       patientNumber += 1
       rows.append([
         'Existing' if deceased else '%s%d' % (patientNumberPrefix, patientNumber),
@@ -210,7 +213,7 @@ def getTabForPrefecture(prefecture):
     return prefecture
   return 'Patient Data'
 
-def writePatients(prefecture, count, date, deceased, source, useCountColumn=True, update=True):  
+def writePatients(prefecture, date, cases, deceased, source, useCountColumn=True, update=True):  
   """
   Writes the patient count information into the spreadsheet.
   """
@@ -235,7 +238,7 @@ def writePatients(prefecture, count, date, deceased, source, useCountColumn=True
     return 0
 
   if update:
-    result = updatePatientCountForDate(sheet, tabProperties, prefecture, count, date, deceased, source)
+    result = updatePatientCountForDate(sheet, tabProperties, prefecture, date, cases, deceased, source)
     if result and 'updates' in result:
       return result['updates']['updatedRows']
     elif result:
@@ -247,7 +250,8 @@ def writePatients(prefecture, count, date, deceased, source, useCountColumn=True
     else:
       patientNumberPrefix, lastPatientNumber = getPatientNumberColumn(sheet, tabProperties)
 
-    result = appendRows(sheet, tabProperties, prefecture, count, date, 
+    result = appendRows(sheet, tabProperties, prefecture, date, 
+      cases = cases,
       deceased = deceased, 
       source = source, 
       patientNumberPrefix = patientNumberPrefix, 
@@ -261,9 +265,9 @@ def writePatients(prefecture, count, date, deceased, source, useCountColumn=True
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('prefecture')
-  parser.add_argument('count', type=int)
+  parser.add_argument('--cases', type=int, default=0)
   parser.add_argument('--update', action='store_true', default=True)
-  parser.add_argument('--deaths', action="store_true")
+  parser.add_argument('--deaths', type=int, default=0)
   parser.add_argument('--date', default=datetime.datetime.now().strftime('%Y-%m-%d'))
   parser.add_argument('--source', default='')
   parser.add_argument('--use-count-column', action=argparse.BooleanOptionalAction, default=True)
@@ -273,5 +277,5 @@ if __name__ == '__main__':
     url = urllib.parse.urlsplit(args.source)
     args.source = urllib.parse.urlunsplit((url.scheme, url.netloc, url.path, None, None))
 
-  rowsUpdated = writePatients(args.prefecture, int(args.count), args.date, args.deaths, args.source, args.use_count_column, update=args.update)
+  rowsUpdated = writePatients(args.prefecture, args.date, int(args.cases), int(args.deaths), args.source, args.use_count_column, update=args.update)
   print('Updates %d rows.' % rowsUpdated)

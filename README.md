@@ -27,7 +27,7 @@ pip3 install Flask
 ```
 cd python
 . venv/bin/activate
-FLASK_APP=main.py flask run
+FLASK_ENV=development FLASK_APP=main.py flask run
 ```
 
 ## Deployment
