@@ -165,7 +165,7 @@ const extractDailySummary = (url, fetchImpl, useProxy) => {
       }
 
       const portAndQuartantine = new RegExp(
-        "空港の検疫で.*?([0-9０-９万]+)人",
+        "空港.*の検疫で.*?([0-9０-９万]+)人",
         "iu"
       );
       let portMatch = contents.match(portAndQuartantine);
