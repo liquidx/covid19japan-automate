@@ -115,7 +115,7 @@ def updatePatientCountForDate(sheet, tabProperties, prefecture, date, cases, dec
         foundRow = True
       
     if foundRow:
-      count = deceased if deceased else count
+      count = deceased if deceased else cases
       if int(row[COUNT_COL]) == count:
         print('Found row but the count was identical: %s %s' % (prefecture, row[COUNT_COL]))
         return
