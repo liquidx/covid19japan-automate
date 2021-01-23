@@ -91,12 +91,13 @@ def getReportDate(soup):
   return None
 
 def getPdfData(soup):
-  prefectureRecoveryName = '別紙１'
+  prefectureRecoveryName1 = '別紙１'
+  prefectureRecoveryName2 = '各都道府県の検査陽性者の状況'
   images = soup.find_all('img')
   links = soup.find_all('a')
   pdfLink = None
   for link in links:
-    if link and link.text and link.text.startswith(prefectureRecoveryName):
+    if link and link.text and (link.text.startswith(prefectureRecoveryName1) or link.text.startswith(prefectureRecoveryName2)):
       pdfLink = link['href']
       if not pdfLink.startswith('https://'):
         pdfLink = 'https://www.mhlw.go.jp' + pdfLink
@@ -167,7 +168,7 @@ def extractDailySummary(imageUrl, outputImages):
           values[key] = num
           break
         else:
-          print('Error: %s does not contain any numbers: %s' % (key, text))
+          print('Could not find number in %s %d: %s' % (key, i, text))
       except ValueError as e:
         print(e)
 
@@ -296,12 +297,14 @@ def writeValues(valueDate, values):
   result = writeSumByDay(sheet, valueDate, values)
   print(result)
 
-  print('Writing to Prefecture Data Sheet')
-  result = writePrefectureData(sheet, values)
-  print(result)
+  if 'prefectureRecoveries' in values:
+    print('Writing to Prefecture Data Sheet')
+    result = writePrefectureData(sheet, values)
+    print(result)
 
-  print('Writing to Recoveries Sheet')
-  result = writeRecoveries(sheet, valueDate, values)
+    print('Writing to Recoveries Sheet')
+    result = writeRecoveries(sheet, valueDate, values)
+
   return result
 
 def reportToday(writeToSpreadsheet=False):
@@ -376,7 +379,8 @@ if __name__ == '__main__':
     summaryValues.update(values)
 
   if args.outputText and summaryValues:
-    [print(v[1]) for v in summaryValues['prefectureRecoveries']]
+    if 'prefectureRecoveries' in summaryValues:
+      [print(v[1]) for v in summaryValues['prefectureRecoveries']]
     print(summaryValues['portRecoveries'])
     print('---')
     print('recoveries,deaths,critical,tested')
