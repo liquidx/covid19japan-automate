@@ -133,18 +133,19 @@ def extractRecoveryNumbers(pdfPath):
   return prefectureValues
 
 def extractImageAreas(image):
-  rowHeight = 16
+  rowHeight = 18
   pcrRect = (70, 140, 70 + 88, 140 + rowHeight)
   criticalRect = (320, 142, 320 + 80, 140 + rowHeight)
   criticalRectTall = (320, 142, 320 + 80, 140 + 36)
   portRecoveriesRect = (400, 84, 400 + 80, 84 + rowHeight)
+  portRecoveriesRect2 = (400, 84, 400 + 80, 84 + 36)
   recoveriesRect = (400, 140, 400 + 80, 140 + rowHeight)
   deathsRect = (510, 140, 510 + 68, 140 + rowHeight)
   return {
     'pcr': [image.crop(pcrRect)],
     'critical': [image.crop(criticalRect), image.crop(criticalRectTall)],
     'recoveries': [image.crop(recoveriesRect)],
-    'portRecoveries': [image.crop(portRecoveriesRect)],
+    'portRecoveries': [image.crop(portRecoveriesRect), image.crop(portRecoveriesRect2)],
     'deaths': [image.crop(deathsRect)]
   }
 
