@@ -6,7 +6,13 @@ FROM python:3.9
 RUN apt-get update -y
 RUN apt-get install -y python-pip python-dev build-essential
 RUN apt update && apt install -y libsm6 libxext6 libgl1
-RUN apt-get -y install tesseract-ocr
+# Install custom tesseract-ocr 4.1.1 (instead of 4.0 in buster)
+RUN apt-get install -y software-properties-common apt-transport-https
+RUN add-apt-repository -y 'deb [trusted=yes] https://notesalexp.org/tesseract-ocr/buster/ buster main'
+RUN apt-get update -y --allow-unauthenticated  -oAcquire::AllowInsecureRepositories=true
+RUN apt-get install -y --allow-unauthenticated  notesalexp-keyring -oAcquire::AllowInsecureRepositories=true
+RUN apt-get update -y --allow-unauthenticated 
+RUN apt-get install -y --allow-unauthenticated  tesseract-ocr 
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
