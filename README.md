@@ -28,6 +28,7 @@ pip3 install Flask
 cd python
 . venv/bin/activate
 FLASK_ENV=development FLASK_APP=main.py flask run
+# request: http://localhost:5000/mhlw/today
 ```
 
 ## Deployment
