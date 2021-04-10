@@ -135,7 +135,7 @@ def extractRecoveryNumbers(pdfPath):
 def extractImageAreas(image):
   rowHeight = 18
   pcrRect = (70, 140, 70 + 88, 140 + rowHeight)
-  criticalRect = (320, 142, 320 + 80, 140 + rowHeight)
+  criticalRect = (320, 145, 320 + 76, 140 + rowHeight - 2)
   criticalRectTall = (320, 142, 320 + 80, 140 + 36)
   portRecoveriesRect = (400, 84, 400 + 80, 84 + rowHeight)
   portRecoveriesRect2 = (400, 84, 400 + 80, 84 + 36)
@@ -161,7 +161,8 @@ def extractDailySummary(imageUrl, outputImages):
       subImage = subImages[key][i]
       if outputImages:
         subImage.save('%s%d.png' % (key, i))
-      text = pytesseract.image_to_string(subImage)
+      text = pytesseract.image_to_string(subImage, config='--psm 6 -c tessedit_char_whitelist=0123456789')
+      print('Text for %s %d: %s' % (key, i, text.strip()))
       try:
         numberMatch = re.search('([0-9,]+)', text)
         if numberMatch:
