@@ -34,6 +34,9 @@ FLASK_ENV=development FLASK_APP=main.py flask run
 
 # Test Command Line
 python3  mhlw.py --extractSummary --outputImages --outputText 
+
+# End venv
+deactivate
 ```
 
 ## Deployment
