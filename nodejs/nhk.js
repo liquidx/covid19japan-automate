@@ -183,12 +183,12 @@ const extractDailySummary = (url, fetchImpl, useProxy) => {
       }
 
       const deathsPattern = new RegExp(
-        "亡くなった人は.*国内で感染した人が([0-9０-９万]+)人",
+        "亡くなった人は.*国内で感染(した|が確認された)人が([0-9０-９万]+)人",
         "iu"
       );
       let deathsMatch = contents.match(deathsPattern);
       if (deathsMatch) {
-        values.deceased = parseJapaneseNumber(deathsMatch[1]);
+        values.deceased = parseJapaneseNumber(deathsMatch[2]);
       }
 
       const criticalPatientsPattern = new RegExp(
@@ -201,12 +201,12 @@ const extractDailySummary = (url, fetchImpl, useProxy) => {
       }
 
       const recoveredJapanPattern = new RegExp(
-        "症状が改善して退院した.*国内で感染した人が([0-9０-９万]+)人",
+        "症状が改善して退院した.*国内で感染(した|が確認された)人が([0-9０-９万]+)人",
         "iu"
       );
       let recoveredJapan = contents.match(recoveredJapanPattern);
       if (recoveredJapan) {
-        values.recoveredJapan = parseJapaneseNumber(recoveredJapan[1]);
+        values.recoveredJapan = parseJapaneseNumber(recoveredJapan[2]);
       }
 
       const recoveredTotalPattern = new RegExp(
