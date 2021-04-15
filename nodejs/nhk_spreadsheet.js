@@ -167,8 +167,8 @@ const extractAndWriteSummary = (date, url, shouldWrite) => {
     })
 }
 
-const getAllArticles = () => {
-  return latestNhkArticles(fetch, 7).then(articles => {
+const getAllArticles = (pageCount = 7) => {
+  return latestNhkArticles(fetch, pageCount).then(articles => {
     let structuredReports = []
 
     // headline patterns
@@ -230,9 +230,9 @@ const getAllArticles = () => {
   })
 }
 
-const findAndWriteSummary = (date, writeToSpreadsheet) => {
+const findAndWriteSummary = (date, writeToSpreadsheet=false, pageCount=5) => {
   let matchDate = DateTime.fromISO(date).toFormat('yyyyMMdd')
-  return latestNhkArticles(fetch, 5).then(articles => {
+  return latestNhkArticles(fetch, pageCount).then(articles => {
     let summaryArticleUrl = ''
     const summaryArticleTitlePattern = new RegExp('(【国内感染】|【国内】)')
     for (let article of articles) {

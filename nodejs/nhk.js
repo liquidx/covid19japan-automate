@@ -249,7 +249,8 @@ const latestNhkArticles = async (fetchImpl, numberOfPages) => {
   }
 
   const articlesUrl = (pageNumber) => {
-    return `https://www3.nhk.or.jp/news/json16/word/0000969_00${pageNumber}.json`;
+    let paddedPageNumber = pageNumber.toString().padStart(3, '0')
+    return `https://www3.nhk.or.jp/news/json16/word/0000969_${paddedPageNumber}.json`;
   };
 
   if (!fetchImpl) {
@@ -265,6 +266,9 @@ const latestNhkArticles = async (fetchImpl, numberOfPages) => {
         const channel = response["channel"];
         const items = channel["item"];
         articles = articles.concat(items);
+      })
+      .catch(err => {
+        console.log(`Unable to find articles at page ${page}`)
       });
   }
 

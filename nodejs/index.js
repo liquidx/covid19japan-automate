@@ -59,7 +59,7 @@ exports.nhkSummary = (req, res) => {
 };
 
 exports.nhkArticles = (req, res) => {
-  getAllArticles().then((articles) => {
+  getAllArticles(20).then((articles) => {
     let outputFormat = "json";
     if (req.query.output) {
       outputFormat = req.query.output;
