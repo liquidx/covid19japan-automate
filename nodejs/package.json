@@ -25,11 +25,14 @@
   },
   "homepage": "https://github.com/liquidx/covid19japan-automate#readme",
   "dependencies": {
+    "@google-cloud/vision": "^2.3.1",
     "cheerio": "^1.0.0-rc.5",
-    "commander": "^6.2.1",
+    "commander": "^7.2.0",
     "google-spreadsheet": "^3.1.15",
+    "image-data-uri": "^2.0.1",
     "lodash": "^4.17.20",
     "luxon": "^1.25.0",
+    "make-fetch-happen": "^8.0.14",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
