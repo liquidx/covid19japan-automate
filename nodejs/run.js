@@ -1,6 +1,8 @@
 const { DateTime, Interval } = require("luxon");
 const { program } = require("commander");
 const fetch = require("make-fetch-happen");
+const fs = require('fs').promises;
+
 const {
   extractAndWriteSummary,
   findAndWriteSummary,
@@ -16,8 +18,13 @@ const credentials = require("./credentials.json");
 const mhlw = (options) => {
   getLatestCovidReport(fetch).then((url) => {
     console.log(url);
-    getSummaryTableFromReport(fetch, url, credentials);
-  });
+    return getSummaryTableFromReport(fetch, url, credentials);
+  }).then(async ({detectionResult, date}) => {
+    console.log(detectionResult)
+    if (options.output) {
+      await fs.writeFile(options.output, JSON.stringify(detectionResult))
+    }
+  })
 };
 
 const nhk = (options) => {
@@ -98,6 +105,7 @@ const main = async () => {
     .command("mhlw")
     .option("--latest-report")
     .option("--summary-table")
+    .option('--output <outputFile>')
     .action(mhlw);
   program
     .command("nhk")
