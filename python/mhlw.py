@@ -209,13 +209,16 @@ def extractDailySummary(imageUrl, outputImages):
             subImage = subImages[key][i]
             if outputImages:
                 subImage.save('%s%d.png' % (key, i))
+
+            # tesseract has trouble with 5 and $, so let it recognize both.
             text = pytesseract.image_to_string(
-                subImage, config='--psm 6 -c tessedit_char_whitelist=0123456789,')
+                subImage, config='--psm 6 -c tessedit_char_whitelist=$0123456789,')
             print('Text for %s %d: %s' % (key, i, text.strip()))
             try:
-                numberMatch = re.search('([0-9,]+)', text)
+                numberMatch = re.search('([0-9,\$]+)', text)
                 if numberMatch:
-                    num = int(numberMatch.group(1).replace(',', ''))
+                    # sanitize the numbers by removing , and replace $ with 5.
+                    num = int(numberMatch.group(1).replace(',', '').replace('$', '5'))
                     values[key] = num
                     break
                 else:
