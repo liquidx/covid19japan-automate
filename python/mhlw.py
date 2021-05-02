@@ -52,316 +52,327 @@ SPREADSHEET_ID = '1vkw_Lku7F_F3F_iNmFFrDq9j7-tQ6EmZPOLpLt-s3TY'
 DEFAULT_MHLW_INDEX_URL = 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/topics_shingata_09444.html'
 # 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000121431_00204.html'
 
-def getLatestCovidReport(indexUrl):
-  """ 
-  Returns the URL for the latest COVID report on MHLW.
 
-  @param indexUrl: URL of the index page of all reports.
-  @returns None if no report found, URL of the first report if found.
-  """
-  covidReportName = '新型コロナウイルス感染症の現在の状況'
-  covidReportPattern = re.compile(covidReportName)
-  contents = urllib.request.urlopen(indexUrl).read()
-  soup = BeautifulSoup(contents, features="html.parser")
-  links = soup.find_all('a')
-  for link in links:
-    if link and link.text and covidReportPattern.search(link.text):
-      if link['href'].startswith('http'):
-        return link['href']
-      else:
-        baseurl = urllib.parse.urlparse(indexUrl)
-        return urllib.parse.urlunparse((baseurl.scheme, baseurl.netloc, link['href'], '', '', ''))
-  return None
+def getLatestCovidReport(indexUrl):
+    """ 
+    Returns the URL for the latest COVID report on MHLW.
+
+    @param indexUrl: URL of the index page of all reports.
+    @returns None if no report found, URL of the first report if found.
+    """
+    covidReportName = '新型コロナウイルス感染症の現在の状況'
+    covidReportPattern = re.compile(covidReportName)
+    contents = urllib.request.urlopen(indexUrl).read()
+    soup = BeautifulSoup(contents, features="html.parser")
+    links = soup.find_all('a')
+    for link in links:
+        if link and link.text and covidReportPattern.search(link.text):
+            if link['href'].startswith('http'):
+                return link['href']
+            else:
+                baseurl = urllib.parse.urlparse(indexUrl)
+                return urllib.parse.urlunparse((baseurl.scheme, baseurl.netloc, link['href'], '', '', ''))
+    return None
+
 
 def getSummaryTable(soup):
-  images = soup.find_all('img')
-  for image in images:
-    if image and image['src'] and image['src'].startswith('data'):
-      return image['src']
-  return None
+    images = soup.find_all('img')
+    for image in images:
+        if image and image['src'] and image['src'].startswith('data'):
+            return image['src']
+    return None
+
 
 def getReportFromUrl(reportUrl):
-  contents = urllib.request.urlopen(reportUrl).read()
-  return BeautifulSoup(contents, features="html.parser")
+    contents = urllib.request.urlopen(reportUrl).read()
+    return BeautifulSoup(contents, features="html.parser")
+
 
 def getReportDate(soup):
-  time = soup.find('time')
-  if time:
-    return time['datetime']
-  return None
+    time = soup.find('time')
+    if time:
+        return time['datetime']
+    return None
+
 
 def getPdfData(soup):
-  prefectureRecoveryName1 = '別紙１'
-  prefectureRecoveryName2 = '各都道府県の検査陽性者の状況'
-  images = soup.find_all('img')
-  links = soup.find_all('a')
-  pdfLink = None
-  for link in links:
-    if link and link.text and (link.text.startswith(prefectureRecoveryName1) or link.text.startswith(prefectureRecoveryName2)):
-      pdfLink = link['href']
-      if not pdfLink.startswith('https://'):
-        pdfLink = 'https://www.mhlw.go.jp' + pdfLink
+    prefectureRecoveryName1 = '別紙１'
+    prefectureRecoveryName2 = '各都道府県の検査陽性者の状況'
+    images = soup.find_all('img')
+    links = soup.find_all('a')
+    pdfLink = None
+    for link in links:
+        if link and link.text and (link.text.startswith(prefectureRecoveryName1) or link.text.startswith(prefectureRecoveryName2)):
+            pdfLink = link['href']
+            if not pdfLink.startswith('https://'):
+                pdfLink = 'https://www.mhlw.go.jp' + pdfLink
 
-  if pdfLink:
-    pdfData = urllib.request.urlopen(pdfLink).read()
-    return pdfData
+    if pdfLink:
+        pdfData = urllib.request.urlopen(pdfLink).read()
+        return pdfData
 
-  return None
+    return None
 
 
 def extractRecoveryNumbers(pdfPath):
-  tables = camelot.read_pdf(
-      pdfPath, flavor='stream', pages='1')
+    tables = camelot.read_pdf(
+        pdfPath, flavor='stream', pages='1')
 
-  summary = tables[0].df.loc[5:, [0, 5]]  
+    summary = tables[0].df.loc[5:, [0, 5]]
 
-  prefectureValues = []
-  for index, row in summary.iterrows():
-    prefecture = row[0]
-    prefecture = re.sub('※[0-9]', '', prefecture)
-    prefecture = re.sub('\s', '', prefecture)
+    prefectureValues = []
+    for index, row in summary.iterrows():
+        prefecture = row[0]
+        prefecture = re.sub('※[0-9]', '', prefecture)
+        prefecture = re.sub('\s', '', prefecture)
 
-    value = row[5]
-    value = re.sub('※[0-9] ', '', value)
-    value = re.sub('[^0-9]+', '', value)
-    #print('%s:  %s' % (prefecture, value))
-    prefectureValues.append((prefecture, value))
+        value = row[5]
+        value = re.sub('※[0-9] ', '', value)
+        value = re.sub('[^0-9]+', '', value)
+        #print('%s:  %s' % (prefecture, value))
+        prefectureValues.append((prefecture, value))
 
-  # Strip last two rows
-  prefectureValues = prefectureValues[:-2]
+    # Strip last two rows
+    prefectureValues = prefectureValues[:-2]
 
-  return prefectureValues
+    return prefectureValues
+
 
 def extractImageAreas(image):
-  rowHeight = 18
-  pcrRect = (70, 140, 70 + 88, 140 + rowHeight)
-  criticalRect = (320, 145, 320 + 76, 140 + rowHeight - 2)
-  criticalRectTall = (320, 142, 320 + 80, 140 + 36)
-  portRecoveriesRect = (400, 84, 400 + 80, 84 + rowHeight)
-  portRecoveriesRect2 = (400, 84, 400 + 80, 84 + 36)
-  recoveriesRect = (400, 140, 400 + 80, 140 + rowHeight)
-  deathsRect = (510, 140, 510 + 68, 140 + rowHeight)
-  return {
-    'pcr': [image.crop(pcrRect)],
-    'critical': [image.crop(criticalRect), image.crop(criticalRectTall)],
-    'recoveries': [image.crop(recoveriesRect)],
-    'portRecoveries': [image.crop(portRecoveriesRect), image.crop(portRecoveriesRect2)],
-    'deaths': [image.crop(deathsRect)]
-  }
+    rowHeight = 18
+    doubleRowHeight = 36
+    secondRowY = 86
+    lastRowY = 144
+    pcrColumnX = 70
+    pcrColumnWidth = 88
+    criticalColumnX = 320
+    criticalColumnWidth = 76
+    recoveryColumnX = 400
+    recoveryColumnWidth = 80
+    deathsColumnX = 510
+    deathsColumnWidth = 68
+
+    pcrRect = (
+        pcrColumnX,
+        lastRowY,
+        pcrColumnX + pcrColumnWidth,
+        lastRowY + rowHeight)
+    criticalRect = (
+        criticalColumnX,
+        lastRowY,
+        criticalColumnX + criticalColumnWidth,
+        lastRowY + rowHeight)
+    criticalRectTall = (
+        criticalColumnX,
+        lastRowY,
+        criticalColumnX + criticalColumnWidth,
+        lastRowY + doubleRowHeight)
+    portRecoveriesRect = (
+        recoveryColumnX,
+        secondRowY,
+        recoveryColumnX + recoveryColumnWidth,
+        secondRowY + rowHeight)
+    portRecoveriesRect2 = (
+        recoveryColumnX,
+        secondRowY,
+        recoveryColumnX + recoveryColumnWidth,
+        secondRowY + doubleRowHeight)
+    recoveriesRect = (
+        recoveryColumnX,
+        lastRowY,
+        recoveryColumnX + recoveryColumnWidth,
+        lastRowY + rowHeight)
+    deathsRect = (
+        deathsColumnX, 
+        lastRowY, 
+        deathsColumnX + deathsColumnWidth, 
+        lastRowY + rowHeight)
+
+    return {
+        'pcr': [image.crop(pcrRect)],
+        'critical': [image.crop(criticalRect), image.crop(criticalRectTall)],
+        'recoveries': [image.crop(recoveriesRect)],
+        'portRecoveries': [image.crop(portRecoveriesRect), image.crop(portRecoveriesRect2)],
+        'deaths': [image.crop(deathsRect)]
+    }
+
 
 def extractDailySummary(imageUrl, outputImages):
-  imageData = urllib.request.urlopen(imageUrl)
-  image = Image.open(imageData)
-  image = image.resize((661, 181))
-  image = image.convert(mode='L')
-  subImages = extractImageAreas(image)
-  values = {}
-  for key in subImages:
-    for i in range(len(subImages[key])):
-      subImage = subImages[key][i]
-      if outputImages:
-        subImage.save('%s%d.png' % (key, i))
-      text = pytesseract.image_to_string(subImage, config='--psm 6 -c tessedit_char_whitelist=0123456789')
-      print('Text for %s %d: %s' % (key, i, text.strip()))
-      try:
-        numberMatch = re.search('([0-9,]+)', text)
-        if numberMatch:
-          num = int(numberMatch.group(1).replace(',', ''))
-          values[key] = num
-          break
-        else:
-          print('Could not find number in %s %d: %s' % (key, i, text))
-      except ValueError as e:
-        print(e)
+    imageData = urllib.request.urlopen(imageUrl)
+    image = Image.open(imageData)
+    image = image.resize((661, 181))
+    image = image.convert(mode='L')
+    subImages = extractImageAreas(image)
+    values = {}
+    for key in subImages:
+        for i in range(len(subImages[key])):
+            subImage = subImages[key][i]
+            if outputImages:
+                subImage.save('%s%d.png' % (key, i))
+            text = pytesseract.image_to_string(
+                subImage, config='--psm 6 -c tessedit_char_whitelist=0123456789,')
+            print('Text for %s %d: %s' % (key, i, text.strip()))
+            try:
+                numberMatch = re.search('([0-9,]+)', text)
+                if numberMatch:
+                    num = int(numberMatch.group(1).replace(',', ''))
+                    values[key] = num
+                    break
+                else:
+                    print('Could not find number in %s %d: %s' %
+                          (key, i, text))
+            except ValueError as e:
+                print(e)
 
-    #print('%s %d' % (key, num))
-  return values
+        #print('%s %d' % (key, num))
+    return values
 
 
 def writeSumByDay(sheet, valueDate, values):
-  result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Sum By Day'!A2:G").execute()
-  if not result:
-    print('Error: No results')
-    return False
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
+                                range="'Sum By Day'!A2:G").execute()
+    if not result:
+        print('Error: No results')
+        return False
 
-  currentValues = result.get('values', [])
-  lastRow = currentValues[-1].copy()
-  if lastRow[0] == valueDate:
-    print('Value for today %s already exists.' % valueDate)
-    return False
+    currentValues = result.get('values', [])
+    lastRow = currentValues[-1].copy()
+    if lastRow[0] == valueDate:
+        print('Value for today %s already exists.' % valueDate)
+        return False
 
-  for v in (values['recoveries'], values['deaths'], values['critical'], values['pcr']):
-    if not v or v == 0:
-      raise ValueError('Not all values for Sum By Day exists')
+    for v in (values['recoveries'], values['deaths'], values['critical'], values['pcr']):
+        if not v or v == 0:
+            raise ValueError('Not all values for Sum By Day exists')
 
-  todaysRow = [valueDate, '', values['recoveries'], values['deaths'], values['critical'], values['pcr']]
-  rowBody = {
-    'values': [todaysRow]
-  }
+    todaysRow = [valueDate, '', values['recoveries'],
+                 values['deaths'], values['critical'], values['pcr']]
+    rowBody = {
+        'values': [todaysRow]
+    }
 
-  return sheet.values().append(
-    spreadsheetId=SPREADSHEET_ID, 
-    range="'Sum By Day'",
-    valueInputOption='USER_ENTERED',
-    body=rowBody).execute()
+    return sheet.values().append(
+        spreadsheetId=SPREADSHEET_ID,
+        range="'Sum By Day'",
+        valueInputOption='USER_ENTERED',
+        body=rowBody).execute()
+
 
 def writePrefectureData(sheet, values):
-  # Check the values
-  if 'prefectureRecoveries' not in values:
-    raise ValueError('prefectureRecoveries values are unavailable')
-  if len(values['prefectureRecoveries']) < 47:
-    raise ValueError('prefectureRecoveries are incomplete')
-  if 'portRecoveries' not in values or values['portRecoveries'] < 1:
-    raise ValueError('portRecoveries are unavailable')
+    # Check the values
+    if 'prefectureRecoveries' not in values:
+        raise ValueError('prefectureRecoveries values are unavailable')
+    if len(values['prefectureRecoveries']) < 47:
+        raise ValueError('prefectureRecoveries are incomplete')
+    if 'portRecoveries' not in values or values['portRecoveries'] < 1:
+        raise ValueError('portRecoveries are unavailable')
 
-  # result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
-  # print(result)
+    # result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
+    # print(result)
 
-  todaysValues = []
-  for v in values['prefectureRecoveries']:
-    todaysValues.append([v[1]])
-  todaysValues.append([values['portRecoveries']])
+    todaysValues = []
+    for v in values['prefectureRecoveries']:
+        todaysValues.append([v[1]])
+    todaysValues.append([values['portRecoveries']])
 
-  return sheet.values().update(
-    spreadsheetId=SPREADSHEET_ID, 
-    range="'Prefecture Data'!E3:E50", 
-    valueInputOption='USER_ENTERED',
-    body = {'values': todaysValues}).execute()
+    return sheet.values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range="'Prefecture Data'!E3:E50",
+        valueInputOption='USER_ENTERED',
+        body={'values': todaysValues}).execute()
+
 
 def writeRecoveries(sheet, valueDate, values):
-  # Check the values
-  if 'prefectureRecoveries' not in values:
-    raise ValueError('prefectureRecoveries values are unavailable')
-  if len(values['prefectureRecoveries']) < 47:
-    raise ValueError('prefectureRecoveries are incomplete')
-  if 'portRecoveries' not in values or values['portRecoveries'] < 1:
-    raise ValueError('portRecoveries are unavailable')
+    # Check the values
+    if 'prefectureRecoveries' not in values:
+        raise ValueError('prefectureRecoveries values are unavailable')
+    if len(values['prefectureRecoveries']) < 47:
+        raise ValueError('prefectureRecoveries are incomplete')
+    if 'portRecoveries' not in values or values['portRecoveries'] < 1:
+        raise ValueError('portRecoveries are unavailable')
 
-  # check if the values have already been written.
-  result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Recoveries'!C1:C1").execute()
-  currentValues = result.get('values', [])
-  if currentValues[0][0] == valueDate:
-    print('Todays values already written in to Recoveries')
-    return False
+    # check if the values have already been written.
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
+                                range="'Recoveries'!C1:C1").execute()
+    currentValues = result.get('values', [])
+    if currentValues[0][0] == valueDate:
+        print('Todays values already written in to Recoveries')
+        return False
 
-  # Construct the values for the column.
-  todaysRecoveryValues = [[valueDate]]
-  for v in values['prefectureRecoveries']:
-    todaysRecoveryValues.append([v[1]])
-  todaysRecoveryValues.append([values['portRecoveries']])
-  todaysRecoveryValues.append([8]) # last value is always 8 recoveries for "Unspecified"
+    # Construct the values for the column.
+    todaysRecoveryValues = [[valueDate]]
+    for v in values['prefectureRecoveries']:
+        todaysRecoveryValues.append([v[1]])
+    todaysRecoveryValues.append([values['portRecoveries']])
+    # last value is always 8 recoveries for "Unspecified"
+    todaysRecoveryValues.append([8])
 
-  # Get the Sheet ID for the recoveries
-  sheetsResult = sheet.get(spreadsheetId=SPREADSHEET_ID, fields='sheets.properties').execute()
-  recoveriesSheetId = 0
-  for sheetProperty in sheetsResult['sheets']:
-    if sheetProperty['properties']['title'] == 'Recoveries':
-      recoveriesSheetId = sheetProperty['properties']['sheetId']
-      break
+    # Get the Sheet ID for the recoveries
+    sheetsResult = sheet.get(spreadsheetId=SPREADSHEET_ID,
+                             fields='sheets.properties').execute()
+    recoveriesSheetId = 0
+    for sheetProperty in sheetsResult['sheets']:
+        if sheetProperty['properties']['title'] == 'Recoveries':
+            recoveriesSheetId = sheetProperty['properties']['sheetId']
+            break
 
-  if not recoveriesSheetId:
-    raise ValueError('Unable to find sheetId for Recoveries tab')
+    if not recoveriesSheetId:
+        raise ValueError('Unable to find sheetId for Recoveries tab')
 
-  # Insert column into the Recoveries Sheet.
-  requests = []
-  requests.append({
-    'insertDimension': {
-      'range': {
-        'sheetId': recoveriesSheetId,
-        'dimension': 'COLUMNS',
-        'startIndex': 2,
-        'endIndex': 3
-      },
-      'inheritFromBefore': True
-    }
-  })
-  result = sheet.batchUpdate(
-    spreadsheetId=SPREADSHEET_ID, 
-    body = {'requests': requests}).execute()
-  print(result)
+    # Insert column into the Recoveries Sheet.
+    requests = []
+    requests.append({
+        'insertDimension': {
+            'range': {
+                'sheetId': recoveriesSheetId,
+                'dimension': 'COLUMNS',
+                'startIndex': 2,
+                'endIndex': 3
+            },
+            'inheritFromBefore': True
+        }
+    })
+    result = sheet.batchUpdate(
+        spreadsheetId=SPREADSHEET_ID,
+        body={'requests': requests}).execute()
+    print(result)
 
-  # Append values into the sheet.
-  return sheet.values().update(
-    spreadsheetId=SPREADSHEET_ID, 
-    range="'Recoveries'!C1:C50", 
-    valueInputOption='USER_ENTERED',
-    body = {'values': todaysRecoveryValues}).execute()    
+    # Append values into the sheet.
+    return sheet.values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range="'Recoveries'!C1:C50",
+        valueInputOption='USER_ENTERED',
+        body={'values': todaysRecoveryValues}).execute()
 
 
 def writeValues(valueDate, values):
-  creds = service_account.Credentials.from_service_account_file(
-    './credentials.json', scopes=SCOPES
-  )
-  service = build('sheets', 'v4', credentials=creds)
-  sheet = service.spreadsheets()
+    creds = service_account.Credentials.from_service_account_file(
+        './credentials.json', scopes=SCOPES
+    )
+    service = build('sheets', 'v4', credentials=creds)
+    sheet = service.spreadsheets()
 
-  print('Writing to Sum By Day Sheet')
-  result = writeSumByDay(sheet, valueDate, values)
-  print(result)
-
-  if 'prefectureRecoveries' in values:
-    print('Writing to Prefecture Data Sheet')
-    result = writePrefectureData(sheet, values)
+    print('Writing to Sum By Day Sheet')
+    result = writeSumByDay(sheet, valueDate, values)
     print(result)
 
-    print('Writing to Recoveries Sheet')
-    result = writeRecoveries(sheet, valueDate, values)
+    if 'prefectureRecoveries' in values:
+        print('Writing to Prefecture Data Sheet')
+        result = writePrefectureData(sheet, values)
+        print(result)
 
-  return result
+        print('Writing to Recoveries Sheet')
+        result = writeRecoveries(sheet, valueDate, values)
+
+    return result
+
 
 def reportToday(writeToSpreadsheet=False):
-  reportUrl = getLatestCovidReport(DEFAULT_MHLW_INDEX_URL)
-  if not reportUrl:
-    return 'Failed to get report URL'
+    reportUrl = getLatestCovidReport(DEFAULT_MHLW_INDEX_URL)
+    if not reportUrl:
+        return 'Failed to get report URL'
 
-  summaryValues = {}
-  print(reportUrl)
-  reportSoup = getReportFromUrl(reportUrl)
-  reportDate = getReportDate(reportSoup)
-  summaryTableUrl = getSummaryTable(reportSoup)
-  reportPdfData = getPdfData(reportSoup)
-  print(reportDate)
-
-  if reportPdfData:
-    with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
-      temp.write(reportPdfData)
-      recoveries = extractRecoveryNumbers(temp.name)
-      summaryValues['prefectureRecoveries'] = recoveries
-
-  if summaryTableUrl:
-    values = extractDailySummary(summaryTableUrl, False)
-    summaryValues.update(values)
-
-  writeStatus = 'Not written'
-  if writeToSpreadsheet:
-    writeStatus = writeValues(reportDate, summaryValues)
-
-  return 'Date: {}\nURL: {}\nWriteStatus: {}\n{}'.format(reportDate, reportUrl, writeStatus, summaryValues)
-
-if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--reportUrl')
-  parser.add_argument('--indexUrl', default=DEFAULT_MHLW_INDEX_URL)
-  parser.add_argument('--disableExtractRecoveries', action='store_true')
-  parser.add_argument('--extractSummary', action='store_true')
-  parser.add_argument('--outputText', action="store_true")
-  parser.add_argument('--outputImages', action="store_true")
-  parser.add_argument('--writeResults', action='store_true')
-  args = parser.parse_args()
-
-  reportUrl = None
-  if args.reportUrl:
-    reportUrl = args.reportUrl
-  else:
-    reportUrl = getLatestCovidReport(args.indexUrl)
-
-
-  reportDate = None
-  reportPdfData = None
-  summaryTableUrl = None
-  summaryValues = {}
-
-  if reportUrl:
+    summaryValues = {}
     print(reportUrl)
     reportSoup = getReportFromUrl(reportUrl)
     reportDate = getReportDate(reportSoup)
@@ -369,25 +380,72 @@ if __name__ == '__main__':
     reportPdfData = getPdfData(reportSoup)
     print(reportDate)
 
-  if not args.disableExtractRecoveries:
     if reportPdfData:
-      with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
-        temp.write(reportPdfData)
-        recoveries = extractRecoveryNumbers(temp.name)
-        summaryValues['prefectureRecoveries'] = recoveries
+        with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
+            temp.write(reportPdfData)
+            recoveries = extractRecoveryNumbers(temp.name)
+            summaryValues['prefectureRecoveries'] = recoveries
 
-  if args.extractSummary and summaryTableUrl:
-    values = extractDailySummary(summaryTableUrl, args.outputImages)
-    summaryValues.update(values)
+    if summaryTableUrl:
+        values = extractDailySummary(summaryTableUrl, False)
+        summaryValues.update(values)
 
-  if args.outputText and summaryValues:
-    if 'prefectureRecoveries' in summaryValues:
-      [print(v[1]) for v in summaryValues['prefectureRecoveries']]
-    print(summaryValues['portRecoveries'])
-    print('---')
-    print('recoveries,deaths,critical,tested')
-    print('%(recoveries)d\t%(deaths)d\t%(critical)d\t%(pcr)d' % summaryValues)
+    writeStatus = 'Not written'
+    if writeToSpreadsheet:
+        writeStatus = writeValues(reportDate, summaryValues)
 
-  if args.writeResults:
-    pprint.pprint(summaryValues)
-    writeValues(reportDate, summaryValues)
+    return 'Date: {}\nURL: {}\nWriteStatus: {}\n{}'.format(reportDate, reportUrl, writeStatus, summaryValues)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--reportUrl')
+    parser.add_argument('--indexUrl', default=DEFAULT_MHLW_INDEX_URL)
+    parser.add_argument('--disableExtractRecoveries', action='store_true')
+    parser.add_argument('--extractSummary', action='store_true')
+    parser.add_argument('--outputText', action="store_true")
+    parser.add_argument('--outputImages', action="store_true")
+    parser.add_argument('--writeResults', action='store_true')
+    args = parser.parse_args()
+
+    reportUrl = None
+    if args.reportUrl:
+        reportUrl = args.reportUrl
+    else:
+        reportUrl = getLatestCovidReport(args.indexUrl)
+
+    reportDate = None
+    reportPdfData = None
+    summaryTableUrl = None
+    summaryValues = {}
+
+    if reportUrl:
+        print(reportUrl)
+        reportSoup = getReportFromUrl(reportUrl)
+        reportDate = getReportDate(reportSoup)
+        summaryTableUrl = getSummaryTable(reportSoup)
+        reportPdfData = getPdfData(reportSoup)
+        print(reportDate)
+
+    if not args.disableExtractRecoveries:
+        if reportPdfData:
+            with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
+                temp.write(reportPdfData)
+                recoveries = extractRecoveryNumbers(temp.name)
+                summaryValues['prefectureRecoveries'] = recoveries
+
+    if args.extractSummary and summaryTableUrl:
+        values = extractDailySummary(summaryTableUrl, args.outputImages)
+        summaryValues.update(values)
+
+    if args.outputText and summaryValues:
+        if 'prefectureRecoveries' in summaryValues:
+            [print(v[1]) for v in summaryValues['prefectureRecoveries']]
+        print(summaryValues['portRecoveries'])
+        print('---')
+        print('recoveries,deaths,critical,tested')
+        print('%(recoveries)d\t%(deaths)d\t%(critical)d\t%(pcr)d' % summaryValues)
+
+    if args.writeResults:
+        pprint.pprint(summaryValues)
+        writeValues(reportDate, summaryValues)
