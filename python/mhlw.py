@@ -53,6 +53,15 @@ DEFAULT_MHLW_INDEX_URL = 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/topic
 # 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000121431_00204.html'
 
 
+def absoluteUrl(referer, path):
+    if path.startswith('data:'):
+        return path
+    if path.startswith('http'):
+        return path
+    baseurl = urllib.parse.urlparse(referer)
+    return urllib.parse.urlunparse((baseurl.scheme, baseurl.netloc, path, '', '', ''))
+
+
 def getLatestCovidReport(indexUrl):
     """ 
     Returns the URL for the latest COVID report on MHLW.
@@ -70,15 +79,15 @@ def getLatestCovidReport(indexUrl):
             if link['href'].startswith('http'):
                 return link['href']
             else:
-                baseurl = urllib.parse.urlparse(indexUrl)
-                return urllib.parse.urlunparse((baseurl.scheme, baseurl.netloc, link['href'], '', '', ''))
+                return absoluteUrl(indexUrl, link['href'])
     return None
 
 
 def getSummaryTable(soup):
-    images = soup.find_all('img')
+    content = soup.find('div', class_='l-contentBody')
+    images = content.find_all('img')
     for image in images:
-        if image and image['src'] and image['src'].startswith('data'):
+        if image and image['src']:
             return image['src']
     return None
 
@@ -129,7 +138,7 @@ def extractRecoveryNumbers(pdfPath):
         value = row[5]
         value = re.sub('※[0-9] ', '', value)
         value = re.sub('[^0-9]+', '', value)
-        #print('%s:  %s' % (prefecture, value))
+        # print('%s:  %s' % (prefecture, value))
         prefectureValues.append((prefecture, value))
 
     # Strip last two rows
@@ -138,7 +147,8 @@ def extractRecoveryNumbers(pdfPath):
     return prefectureValues
 
 
-def extractImageAreas(image):
+def extractImageAreas(image, normalizedSize):
+    # All values are relative to normalizedSize (661, 181)
     rowHeight = 18
     doubleRowHeight = 36
     secondRowY = 86
@@ -183,9 +193,9 @@ def extractImageAreas(image):
         recoveryColumnX + recoveryColumnWidth,
         lastRowY + rowHeight)
     deathsRect = (
-        deathsColumnX, 
-        lastRowY, 
-        deathsColumnX + deathsColumnWidth, 
+        deathsColumnX,
+        lastRowY,
+        deathsColumnX + deathsColumnWidth,
         lastRowY + rowHeight)
 
     return {
@@ -199,10 +209,16 @@ def extractImageAreas(image):
 
 def extractDailySummary(imageUrl, outputImages):
     imageData = urllib.request.urlopen(imageUrl)
-    image = Image.open(imageData)
-    image = image.resize((661, 181))
-    image = image.convert(mode='L')
-    subImages = extractImageAreas(image)
+    image = Image.open(imageData).convert(mode='RGBA')
+    image.save('original.png')
+    white = Image.new('RGBA', image.size, color='#ffffff')
+    white.save('white.png')
+    mergedImage = Image.alpha_composite(white, image)
+    mergedImage.save('merged.png')
+    normalizedSize = (661, 181)
+    mergedImage = mergedImage.resize(normalizedSize)
+    mergedImage = mergedImage.convert(mode='L')
+    subImages = extractImageAreas(mergedImage, normalizedSize)
     values = {}
     for key in subImages:
         for i in range(len(subImages[key])):
@@ -218,7 +234,8 @@ def extractDailySummary(imageUrl, outputImages):
                 numberMatch = re.search('([0-9,\$]+)', text)
                 if numberMatch:
                     # sanitize the numbers by removing , and replace $ with 5.
-                    num = int(numberMatch.group(1).replace(',', '').replace('$', '5'))
+                    num = int(numberMatch.group(1).replace(
+                        ',', '').replace('$', '5'))
                     values[key] = num
                     break
                 else:
@@ -227,7 +244,7 @@ def extractDailySummary(imageUrl, outputImages):
             except ValueError as e:
                 print(e)
 
-        #print('%s %d' % (key, num))
+        # print('%s %d' % (key, num))
     return values
 
 
@@ -379,7 +396,7 @@ def reportToday(writeToSpreadsheet=False):
     print(reportUrl)
     reportSoup = getReportFromUrl(reportUrl)
     reportDate = getReportDate(reportSoup)
-    summaryTableUrl = getSummaryTable(reportSoup)
+    summaryTableUrl = absoluteUrl(reportUrl, getSummaryTable(reportSoup))
     reportPdfData = getPdfData(reportSoup)
     print(reportDate)
 
@@ -426,7 +443,7 @@ if __name__ == '__main__':
         print(reportUrl)
         reportSoup = getReportFromUrl(reportUrl)
         reportDate = getReportDate(reportSoup)
-        summaryTableUrl = getSummaryTable(reportSoup)
+        summaryTableUrl = absoluteUrl(reportUrl, getSummaryTable(reportSoup))
         reportPdfData = getPdfData(reportSoup)
         print(reportDate)
 
