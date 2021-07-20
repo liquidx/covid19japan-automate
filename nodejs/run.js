@@ -21,7 +21,7 @@ const mhlw = (options) => {
 };
 
 const nhk = (options) => {
-  if (!options.date && !options.list && !(options.today || options.yesterday)) {
+  if (!options.date && !options.list && !(options.today || options.yesterday) && !options.url) {
     program.help();
     return;
   }
