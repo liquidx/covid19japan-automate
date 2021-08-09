@@ -107,7 +107,8 @@ def updatePatientCountForDate(sheet, tabProperties, prefecture, date, cases, dec
   for i in range(0, len(result['rows'])):
     rowNumber = result['startRow'] + i
     row = result['rows'][i]
-    if row[DATE_COL] == date and row[PREFECTURE_COL] == prefecture:
+
+    if len(row) > PREFECTURE_COL and row[DATE_COL] == date and row[PREFECTURE_COL] == prefecture:
       isDeceased = row[STATUS_COL] == 'Deceased'
       if deceased and isDeceased:
         foundRow = True
