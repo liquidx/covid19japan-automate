@@ -5,6 +5,7 @@ const {
   extractAndWriteSummary,
   findAndWriteSummary,
   getAllArticles,
+  updatePatientData,
 } = require("./nhk_spreadsheet.js");
 const { sortedPrefectureCounts } = require("./nhk.js");
 const {
@@ -90,9 +91,32 @@ const nhk = (options) => {
   }
 };
 
+const updateCounts = async (options) => {
+  const testData = {
+    'Fukuoka': {
+      deceased: {
+        count: 4,
+        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013195281000.html'
+      }
+    },
+    'Aichi': {
+      deceased: {
+        count: 3,
+        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013194721000.html'
+      }
+    },
+    'Tokyo': {
+      deceased: {
+        count: 3,
+        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013194771000.html'
+      }
+    }, 
+  }
+  return updatePatientData(credentials, options.date, testData, options.write)
+}
+
 const main = async () => {
   program.version("0.0.1");
-  program;
 
   program
     .command("mhlw")
@@ -113,6 +137,12 @@ const main = async () => {
     .option("--today", "Execute for today.")
     .option("--yesterday", "Execute for yesterday.")
     .action(nhk);
+
+  program
+    .command('counts')
+    .option("-d, --date <date>", "Date in YYYY-MM-DD format")
+    .option("-w, --write", "Write to spreadsheet")
+    .action(updateCounts)
 
   program.parse(process.argv);
 };
