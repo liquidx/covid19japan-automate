@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { DateTime, Interval } = require("luxon");
 const { program } = require("commander");
 const fetch = require("make-fetch-happen");
@@ -60,26 +61,44 @@ const nhk = (options) => {
 
   if (options.list) {
     getAllArticles(20).then((articles) => {
-      for (let article of articles) {
-        let shouldShow = true;
+      console.log(options.date);
+      const filteredArticles = articles
+        .filter(article => {
+          return (!options.date || article.date == options.date)
+        })
+        .filter(article => {
+          return (!options.prefecture || !article.prefecture || article.prefecture.toLowerCase() == options.prefecture.toLowerCase())
+        })
 
-        if (options.date) {
-          if (article.date != options.date) {
-            shouldShow = false;
+      filteredArticles.forEach(article => {
+        console.log(`${article.date} ${article.prefecture} ${article.title} ${article.confirmed} ${article.deaths}`)
+      })
+
+      if (options.output) {
+        const prefectureUpdates = {}
+        filteredArticles.forEach(article => {
+          if (!article.prefecture) {
+            return;
           }
-        }
-        if (options.prefecture) {
-          if (
-            !article.prefecture ||
-            article.prefecture.toLowerCase() != options.prefecture.toLowerCase()
-          )
-            shouldShow = false;
-        }
+          prefectureUpdates[article.prefecture] = {}
+          if (article.confirmed) {
+            prefectureUpdates[article.prefecture].confirmed = {
+              count: article.confirmed,
+              source: article.source
+            }
+          }
+          if (article.deaths) {
+            prefectureUpdates[article.prefecture].deceased = {
+              count: article.deaths,
+              source: article.source
+            }
+          }
+        })
 
-        if (shouldShow) {
-          console.log(article);
-        }
+        fs.writeFileSync(options.output, JSON.stringify(prefectureUpdates, null, '  '));
       }
+      console.log(filteredArticles.length);
+     
     });
   } else if (options.url) {
     extractAndWriteSummary(options.date, options.url, options.write).then(
@@ -92,7 +111,7 @@ const nhk = (options) => {
 };
 
 const updateCounts = async (options) => {
-  const testData = {
+  let input = {
     'Fukuoka': {
       deceased: {
         count: 4,
@@ -112,7 +131,10 @@ const updateCounts = async (options) => {
       }
     }, 
   }
-  return updatePatientData(credentials, options.date, testData, options.write)
+  if (options.input) {
+    input = JSON.parse(fs.readFileSync(options.input))
+  }
+  return updatePatientData(credentials, options.date, input, options.write)
 }
 
 const main = async () => {
@@ -136,10 +158,12 @@ const main = async () => {
     .option("--raw-values", "Print out raw values", false)
     .option("--today", "Execute for today.")
     .option("--yesterday", "Execute for yesterday.")
+    .option("--output <filename>", "Output to file")
     .action(nhk);
 
   program
     .command('counts')
+    .option('-i, --input <file>', 'Input JSON file with per-prefecture updates')
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
     .option("-w, --write", "Write to spreadsheet")
     .action(updateCounts)
