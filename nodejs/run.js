@@ -1,5 +1,5 @@
-const fs = require('fs');
-const { DateTime, Interval } = require("luxon");
+const fs = require("fs");
+const { DateTime } = require("luxon");
 const { program } = require("commander");
 const fetch = require("make-fetch-happen");
 const {
@@ -7,15 +7,14 @@ const {
   findAndWriteSummary,
   getAllArticles,
   updatePatientData,
-} = require("./nhk_spreadsheet.js");
-const { sortedPrefectureCounts } = require("./nhk.js");
+} = require("./nhk_spreadsheet");
 const {
   getLatestCovidReport,
   getSummaryTableFromReport,
-} = require("./mhlw.js");
+} = require("./mhlw");
 const credentials = require("./credentials.json");
 
-const mhlw = (options) => {
+const mhlw = () => {
   getLatestCovidReport(fetch).then((url) => {
     console.log(url);
     getSummaryTableFromReport(fetch, url, credentials);
@@ -28,12 +27,13 @@ const nhk = (options) => {
     return;
   }
 
+  let { date } = options;
   if (options.today) {
-    options.date = DateTime.utc().plus({ hours: 9 }).toISODate();
+    date = DateTime.utc().plus({ hours: 9 }).toISODate();
   }
 
   if (options.yesterday) {
-    options.date = DateTime.utc()
+    date = DateTime.utc()
       .plus({ hours: 9 })
       .minus({ days: 1 })
       .toISODate();
@@ -41,7 +41,7 @@ const nhk = (options) => {
 
   const outputResults = (result) => {
     if (options.rawValues) {
-      const counts = result.counts;
+      const { counts } = result;
       for (const value of Object.values(result.counts.prefectureCounts)) {
         console.log(value);
       }
@@ -63,94 +63,77 @@ const nhk = (options) => {
     getAllArticles(20).then((articles) => {
       console.log(options.date);
       const filteredArticles = articles
-        .filter(article => {
-          return (!options.date || article.date == options.date)
-        })
-        .filter(article => {
-          return (!options.prefecture || !article.prefecture || article.prefecture.toLowerCase() == options.prefecture.toLowerCase())
-        })
+        .filter((article) => (!date || article.date === date))
+        .filter((article) => (
+          !options.prefecture
+          || !article.prefecture
+          || article.prefecture.toLowerCase() === options.prefecture.toLowerCase()));
 
-      filteredArticles.forEach(article => {
-        console.log(`${article.date} ${article.prefecture} ${article.title} ${article.confirmed} ${article.deaths}`)
-      })
+      filteredArticles.forEach((article) => {
+        console.log(`${article.date} ${article.prefecture} ${article.title} ${article.confirmed} ${article.deaths}`);
+      });
 
       if (options.output) {
-        const prefectureUpdates = {}
-        filteredArticles.forEach(article => {
+        const prefectureUpdates = {};
+        filteredArticles.forEach((article) => {
           if (!article.prefecture) {
             return;
           }
-          prefectureUpdates[article.prefecture] = {}
+          prefectureUpdates[article.prefecture] = {};
           if (article.confirmed) {
             prefectureUpdates[article.prefecture].confirmed = {
               count: article.confirmed,
-              source: article.source
-            }
+              source: article.source,
+            };
           }
           if (article.deaths) {
             prefectureUpdates[article.prefecture].deceased = {
               count: article.deaths,
-              source: article.source
-            }
+              source: article.source,
+            };
           }
-        })
+        });
 
-        fs.writeFileSync(options.output, JSON.stringify(prefectureUpdates, null, '  '));
+        fs.writeFileSync(options.output, JSON.stringify(prefectureUpdates, null, "  "));
       }
       console.log(filteredArticles.length);
-     
     });
   } else if (options.url) {
-    extractAndWriteSummary(options.date, options.url, options.write).then(
-      outputResults
+    extractAndWriteSummary(date, options.url, options.write).then(
+      outputResults,
     );
   } else {
     // 25 is the max.
-    findAndWriteSummary(options.date, options.write, 25).then(outputResults);
+    findAndWriteSummary(date, options.write, 25).then(outputResults);
   }
 };
 
 const updateCounts = async (options) => {
   let input = {
-    'Fukuoka': {
+    Tokyo: {
       deceased: {
-        count: 4,
-        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013195281000.html'
-      }
+        count: 6,
+      },
     },
-    'Aichi': {
-      deceased: {
-        count: 3,
-        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013194721000.html'
-      }
-    },
-    'Tokyo': {
-      deceased: {
-        count: 3,
-        source: 'https://www3.nhk.or.jp/news/html/20210811/k10013194771000.html'
-      }
-    }, 
-  }
+  };
   if (options.input) {
-    input = JSON.parse(fs.readFileSync(options.input))
+    input = JSON.parse(fs.readFileSync(options.input));
   }
-  return updatePatientData(credentials, options.date, input, options.write)
-}
+  return updatePatientData(options.date, input, options.write);
+};
 
 const main = async () => {
   program.version("0.0.1");
 
   program
     .command("mhlw")
-    .option("--latest-report")
-    .option("--summary-table")
     .action(mhlw);
   program
     .command("nhk")
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
     .option(
       "--url <url>",
-      "URL of NHK Report (e.g. https://www3.nhk.or.jp/news/html/20201219/k10012773101000.html)"
+      "URL of NHK Report (e.g. https://www3.nhk.or.jp/news/html/20201219/k10012773101000.html)",
     )
     .option("-w, --write", "Write to spreadsheet")
     .option("-l, --list", "List all articles")
@@ -162,11 +145,11 @@ const main = async () => {
     .action(nhk);
 
   program
-    .command('counts')
-    .option('-i, --input <file>', 'Input JSON file with per-prefecture updates')
+    .command("counts")
+    .option("-i, --input <file>", "Input JSON file with per-prefecture updates")
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
     .option("-w, --write", "Write to spreadsheet")
-    .action(updateCounts)
+    .action(updateCounts);
 
   program.parse(process.argv);
 };

@@ -154,9 +154,9 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
   }
 };
 
-const updatePatientData = async (credentialsJson, date, prefectureCounts, shouldWrite) => {
+const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
   const doc = new GoogleSpreadsheet(SPREADSHEET_ID);
-  await doc.useServiceAccountAuth(credentialsJson);
+  await doc.useServiceAccountAuth(googleCredentials());
   await doc.loadInfo(); // loads document properties and worksheets
 
   const bufferSize = 100;
@@ -189,7 +189,9 @@ const updatePatientData = async (credentialsJson, date, prefectureCounts, should
     for (const sheet of updatedPrefectureSheets) {
       await sheet.saveUpdatedCells();
     }
+    return true;
   }
+  return false;
 };
 
 const writeNhkSummary = async (credentialsJson, dateString, url, prefectureCounts, otherCounts) => {

@@ -1,44 +1,67 @@
-const { DateTime, Interval } = require("luxon");
+const { DateTime } = require("luxon");
 
 const {
-  extractAndWriteSummary,
+  updatePatientData,
   findAndWriteSummary,
   getAllArticles,
-} = require("./nhk_spreadsheet.js");
+} = require("./nhk_spreadsheet");
+
+const actionUrl = (prefecture, date, source, confirmed, deaths) => {
+  if (confirmed) {
+    return `https://covid19japan-auto.liquidx.net/patients/update?source=${source}&prefecture=${prefecture}&date=${date}&cases=${confirmed}`;
+  }
+  if (deaths) {
+    return `https://covid19japan-auto.liquidx.net/patients/update?source=${source}&prefecture=${prefecture}&date=${date}&deceased=${deaths}`;
+  }
+  return `https://covid19japan-auto.liquidx.net/patients/update?source=${source}&prefecture=${prefecture}&date=${date}`;
+};
 
 const countWithActionUrl = (article, confirmedOrDeath) => {
-  let encodedUrl = encodeURIComponent(article.source)
-  if (confirmedOrDeath == 'confirmed') {
+  const encodedUrl = encodeURIComponent(article.source);
+  if (confirmedOrDeath === "confirmed") {
     if (article.confirmed) {
-      return `<a target="_blank" href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&cases=${article.confirmed}">${article.confirmed}</a>`
-    } else if (article.prefecture) {
-      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}">?</a>`
-    } else {
-      return ''      
+      const url = actionUrl(article.prefecture, article.date, encodedUrl, article.confirmed);
+      return `<a target="_blank" href="${url}">${article.confirmed}</a>`;
     }
-  } else if (confirmedOrDeath == 'deaths') {
+    if (article.prefecture) {
+      const url = actionUrl(article.prefecture, article.date, encodedUrl);
+      return `<a target="_blank"  href="${url}">?</a>`;
+    }
+    return "";
+  } if (confirmedOrDeath === "deaths") {
     if (article.deaths) {
-      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}&deceased=${article.deaths}">${article.deaths}</a>`
-    } else if (article.prefecture) {
-      return `<a target="_blank"  href="https://covid19japan-auto.liquidx.net/patients/update?source=${encodedUrl}&prefecture=${article.prefecture}&date=${article.date}">?</a>`
-    } else {
-      return ''
+      const url = actionUrl(article.prefecture, article.date, encodedUrl, 0, article.confirmed);
+      return `<a target="_blank"  href="${url}">${article.deaths}</a>`;
     }
+    if (article.prefecture) {
+      const url = actionUrl(article.prefecture, article.date, encodedUrl);
+      return `<a target="_blank"  href="${url}">?</a>`;
+    }
+    return "";
   }
-}
+  return "";
+};
 
-const addPatientsCommand = (article) => {
-  let command = ''
-  if (article.prefecture) {
-    if (article.confirmed) {
-      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.confirmed}; `
-    } 
-    if (article.deaths) {
-      command += `python3 sync_patients.py --date ${article.date} --source ${article.source} ${article.prefecture} ${article.deaths} --deaths; `
-    }
+exports.updatePatientData = async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(500).send("Expecting POST method");
   }
-  return command
-}
+
+  let date = DateTime.utc().plus({ hours: 9 }).toISODate();
+  if (req.query.yesterday) {
+    date = DateTime.utc().plus({ hours: 9 }).minus({ days: 1 }).toISODate();
+  } else if (req.query.date) {
+    date = req.query.date;
+  }
+
+  const prefecturePatientCounts = JSON.parse(req.body);
+  if (!prefecturePatientCounts) {
+    res.status(500).send("Expecting JSON body");
+  }
+
+  const result = await updatePatientData(date, prefecturePatientCounts, true);
+  res.status(200).send(`${result}`);
+};
 
 exports.nhkSummary = (req, res) => {
   let date = DateTime.utc().plus({ hours: 9 }).toISODate();
@@ -65,19 +88,14 @@ exports.nhkArticles = (req, res) => {
       outputFormat = req.query.output;
     }
 
-    let rpc = true
-    if (req.query.command) {
-      rpc = false
-    }
-
-    if (outputFormat == "html") {
+    if (outputFormat === "html") {
       let htmlOutput = "";
-      for (let article of articles) {
-        let confirmed =  countWithActionUrl(article, 'confirmed')
-        let deaths =  countWithActionUrl(article, 'deaths')
+      for (const article of articles) {
+        const confirmed = countWithActionUrl(article, "confirmed");
+        const deaths = countWithActionUrl(article, "deaths");
         htmlOutput += `<tr>
          <td>${article.date}</td>
-         <td>${article.prefecture || ''}</td>
+         <td>${article.prefecture || ""}</td>
          <td>${confirmed}</td>
          <td>${deaths}</td>
          <td><a href="${article.source}">${article.title}</a></td>
@@ -85,14 +103,19 @@ exports.nhkArticles = (req, res) => {
       }
       res.send(
         `<html>
-         <head><style>th { text-align: left; background: #ddd; } td { padding: 2px; border-bottom: 1px solid #ddd; }</style></head>
+         <head>
+          <style>
+          th { text-align: left; background: #ddd; } 
+          td { padding: 2px; border-bottom: 1px solid #ddd; }
+          </style>
+         </head>
          <body style="font-family: sans-serif;">
          <table>
           <tr><th>Date</th><th>Prefecture</th><th>Confirmed</th><th>Deaths</th><th>Source</th></tr>
          ${htmlOutput}
          </table>
          </body>
-         </html>`
+         </html>`,
       );
     } else {
       res.send(JSON.stringify(articles));
