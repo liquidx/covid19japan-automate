@@ -1,4 +1,5 @@
 const fs = require("fs");
+const axios = require("axios");
 const { DateTime } = require("luxon");
 const { program } = require("commander");
 const fetch = require("make-fetch-happen");
@@ -119,6 +120,22 @@ const updateCounts = async (options) => {
   if (options.input) {
     input = JSON.parse(fs.readFileSync(options.input));
   }
+  if (!options.date) {
+    return "requires date";
+  }
+  if (options.remote) {
+    let url = `https://us-central1-covid19-analysis.cloudfunctions.net/updatePatientData?date=${options.date}`;
+    // let url = `http://localhost:8080/?date=${options.date}`;
+    if (options.write) {
+      url += "&write=1";
+    }
+    return axios.post(url, input)
+      .catch((error) => {
+        console.error(`Error: ${error.response.status} ${error.response.data}`);
+        return {};
+      })
+      .then((response) => console.log(response.data));
+  }
   return updatePatientData(options.date, input, options.write);
 };
 
@@ -149,6 +166,7 @@ const main = async () => {
     .option("-i, --input <file>", "Input JSON file with per-prefecture updates")
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
     .option("-w, --write", "Write to spreadsheet")
+    .option("-r, --remote", "Execute remotely")
     .action(updateCounts);
 
   program.parse(process.argv);

@@ -54,12 +54,18 @@ exports.updatePatientData = async (req, res) => {
     date = req.query.date;
   }
 
-  const prefecturePatientCounts = JSON.parse(req.body);
+  // express automatically parses JSON bodies.
+  const prefecturePatientCounts = req.body;
   if (!prefecturePatientCounts) {
     res.status(500).send("Expecting JSON body");
   }
 
-  const result = await updatePatientData(date, prefecturePatientCounts, true);
+  let write = false;
+  if (req.query.write) {
+    write = true;
+  }
+
+  const result = await updatePatientData(date, prefecturePatientCounts, write);
   res.status(200).send(`${result}`);
 };
 

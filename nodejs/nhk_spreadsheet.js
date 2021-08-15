@@ -14,7 +14,7 @@
 const path = require("path");
 const process = require("process");
 
-const fetch = require("node-fetch");
+const fetch = require("make-fetch-happen");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { DateTime, Interval } = require("luxon");
 const {

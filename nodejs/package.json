@@ -8,7 +8,8 @@
     "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
     "deploy-patients": "gcloud functions deploy updatePatientData --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
     "debug-summary": "npx @google-cloud/functions-framework --target=nhkSummary",
-    "debug-articles": "npx @google-cloud/functions-framework --target=nhkArticles"
+    "debug-articles": "npx @google-cloud/functions-framework --target=nhkArticles",
+    "debug-patients": "npx @google-cloud/functions-framework --target=updatePatientData"
   },
   "repository": {
     "type": "git",
@@ -25,14 +26,14 @@
   "homepage": "https://github.com/liquidx/covid19japan-automate#readme",
   "dependencies": {
     "@google-cloud/vision": "^2.3.1",
+    "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.5",
     "commander": "^7.2.0",
     "google-spreadsheet": "^3.1.15",
     "image-data-uri": "^2.0.1",
     "lodash": "^4.17.20",
     "luxon": "^1.25.0",
-    "make-fetch-happen": "^8.0.14",
-    "node-fetch": "^2.6.1"
+    "make-fetch-happen": "^8.0.14"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^1.7.1",
