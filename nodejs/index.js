@@ -30,7 +30,7 @@ const countWithActionUrl = (article, confirmedOrDeath) => {
     return "";
   } if (confirmedOrDeath === "deaths") {
     if (article.deaths) {
-      const url = actionUrl(article.prefecture, article.date, encodedUrl, 0, article.confirmed);
+      const url = actionUrl(article.prefecture, article.date, encodedUrl, 0, article.deaths);
       return `<a target="_blank"  href="${url}">${article.deaths}</a>`;
     }
     if (article.prefecture) {
