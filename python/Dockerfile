@@ -4,7 +4,7 @@ FROM python:3.9
 
 # Install extra dependencies
 RUN apt-get update -y
-RUN apt-get install -y python-pip python-dev build-essential
+RUN apt-get install -y python3-pip python-dev build-essential
 RUN apt update && apt install -y libsm6 libxext6 libgl1
 # Install custom tesseract-ocr 4.1.1 (instead of 4.0 in buster)
 RUN apt-get install -y software-properties-common apt-transport-https
