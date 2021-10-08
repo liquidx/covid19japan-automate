@@ -123,7 +123,7 @@ def getPdfData(soup):
     return None
 
 
-def extractRecoveryNumbers(pdfPath, verbose=False):
+def extractCasesRecoveryNumbers(pdfPath, verbose=False):
     tables = camelot.read_pdf(
         pdfPath, flavor='stream', pages='1')
 
@@ -136,7 +136,7 @@ def extractRecoveryNumbers(pdfPath, verbose=False):
             print(tables[0].df.to_string())
             return []
 
-    summary = tables[0].df.loc[first_row:, [0, 6]]
+    summary = tables[0].df.loc[first_row:, [0, 2, 6]]
 
     if verbose:
         print(tables[0].df.to_string())
@@ -148,13 +148,17 @@ def extractRecoveryNumbers(pdfPath, verbose=False):
         prefecture = re.sub('※[0-9]', '', prefecture)
         prefecture = re.sub('\s', '', prefecture)
 
-        value = row[6]
-        value = re.sub('※[0-9] ', '', value)
-        value = re.sub('[^0-9]+', '', value)
+        cases = row[2]
+        cases = re.sub('※[0-9] ', '', cases)
+        cases = re.sub('[^0-9]+', '', cases)
+
+        recovery = row[6]
+        recovery = re.sub('※[0-9] ', '', recovery)
+        recovery = re.sub('[^0-9]+', '', recovery)
 
         if verbose:
-            print('%s:  %s' % (prefecture, value))
-        prefectureValues.append((prefecture, value))
+            print('%s: Recovery: %s Cases: %s' % (prefecture, recovery, cases))
+        prefectureValues.append((prefecture, recovery, cases))
 
     # Strip last two rows
     prefectureValues = prefectureValues[:-2]
@@ -295,10 +299,10 @@ def writeSumByDay(sheet, valueDate, values):
 
 def writePrefectureData(sheet, values, verbose=False):
     # Check the values
-    if 'prefectureRecoveries' not in values:
-        raise ValueError('prefectureRecoveries values are unavailable')
-    if len(values['prefectureRecoveries']) < 47:
-        raise ValueError('prefectureRecoveries are incomplete')
+    if 'prefectureCasesRecoveries' not in values:
+        raise ValueError('prefectureCasesRecoveries values are unavailable')
+    if len(values['prefectureCasesRecoveries']) < 47:
+        raise ValueError('prefectureCasesRecoveries are incomplete')
     if 'portRecoveries' not in values or values['portRecoveries'] < 1:
         raise ValueError('portRecoveries are unavailable')
 
@@ -306,24 +310,38 @@ def writePrefectureData(sheet, values, verbose=False):
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
         print(result)
 
-    todaysValues = []
-    for v in values['prefectureRecoveries']:
-        todaysValues.append([v[1]])
-    todaysValues.append([values['portRecoveries']])
+    results = []
 
-    return sheet.values().update(
+    todaysRecoveries = []
+    for v in values['prefectureCasesRecoveries']:
+        todaysRecoveries.append([v[1]])
+    todaysRecoveries.append([values['portRecoveries']])
+    result = sheet.values().update(
         spreadsheetId=SPREADSHEET_ID,
         range="'Prefecture Data'!E3:E50",
         valueInputOption='USER_ENTERED',
-        body={'values': todaysValues}).execute()
+        body={'values': todaysRecoveries}).execute()
+    results.append(result)
 
+    # Write cases
+    todaysCases = []
+    for v in values['prefectureCasesRecoveries']:
+        todaysCases.append([v[2]])
+    todaysCases.append([values['portRecoveries']])
+    result = sheet.values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range="'Prefecture Data'!I3:I50",
+        valueInputOption='USER_ENTERED',
+        body={'values': todaysCases}).execute()
+    results.append(result)   
+    return results 
 
 def writeRecoveries(sheet, valueDate, values):
     # Check the values
-    if 'prefectureRecoveries' not in values:
-        raise ValueError('prefectureRecoveries values are unavailable')
-    if len(values['prefectureRecoveries']) < 47:
-        raise ValueError('prefectureRecoveries are incomplete')
+    if 'prefectureCasesRecoveries' not in values:
+        raise ValueError('prefectureCasesRecoveries values are unavailable')
+    if len(values['prefectureCasesRecoveries']) < 47:
+        raise ValueError('prefectureCasesRecoveries are incomplete')
     if 'portRecoveries' not in values or values['portRecoveries'] < 1:
         raise ValueError('portRecoveries are unavailable')
 
@@ -337,7 +355,7 @@ def writeRecoveries(sheet, valueDate, values):
 
     # Construct the values for the column.
     todaysRecoveryValues = [[valueDate]]
-    for v in values['prefectureRecoveries']:
+    for v in values['prefectureCasesRecoveries']:
         todaysRecoveryValues.append([v[1]])
     todaysRecoveryValues.append([values['portRecoveries']])
     # last value is always 8 recoveries for "Unspecified"
@@ -392,7 +410,7 @@ def writeValues(valueDate, values):
     result = writeSumByDay(sheet, valueDate, values)
     print(result)
 
-    if 'prefectureRecoveries' in values:
+    if 'prefectureCasesRecoveries' in values:
         print('Writing to Prefecture Data Sheet')
         result = writePrefectureData(sheet, values)
         print(result)
@@ -419,8 +437,8 @@ def reportToday(writeToSpreadsheet=False):
     if reportPdfData:
         with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
             temp.write(reportPdfData)
-            recoveries = extractRecoveryNumbers(temp.name)
-            summaryValues['prefectureRecoveries'] = recoveries
+            casesRecoveries = extractCasesRecoveryNumbers(temp.name)
+            summaryValues['prefectureCasesRecoveries'] = casesRecoveries
 
     if summaryTableUrl:
         values = extractDailySummary(summaryTableUrl, False)
@@ -468,16 +486,16 @@ if __name__ == '__main__':
         if reportPdfData:
             with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
                 temp.write(reportPdfData)
-                recoveries = extractRecoveryNumbers(temp.name, args.verbose)
-                summaryValues['prefectureRecoveries'] = recoveries
+                casesRecoveries = extractCasesRecoveryNumbers(temp.name, args.verbose)
+                summaryValues['prefectureCasesRecoveries'] = casesRecoveries
 
     if args.extractSummary and summaryTableUrl:
         values = extractDailySummary(summaryTableUrl, args.outputImages)
         summaryValues.update(values)
 
     if args.outputText and summaryValues:
-        if 'prefectureRecoveries' in summaryValues:
-            [print(v[1]) for v in summaryValues['prefectureRecoveries']]
+        if 'prefectureCasesRecoveries' in summaryValues:
+            [print(v[1]) for v in summaryValues['prefectureCasesRecoveries']]
         print(summaryValues['portRecoveries'])
         print('---')
         print('recoveries,deaths,critical,tested')
