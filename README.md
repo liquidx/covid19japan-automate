@@ -33,7 +33,10 @@ FLASK_ENV=development FLASK_APP=main.py flask run
 # request: http://localhost:5000/mhlw/today
 
 # Test Command Line
-python3  mhlw.py --extractSummary --outputImages --outputText 
+python3  mhlw.py --extractSummary --verbose
+
+# Write to spreadsheet
+python3  mhlw.py --extractSummary --verbose --writeSummary
 
 # End venv
 deactivate

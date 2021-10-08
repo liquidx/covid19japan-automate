@@ -123,22 +123,37 @@ def getPdfData(soup):
     return None
 
 
-def extractRecoveryNumbers(pdfPath):
+def extractRecoveryNumbers(pdfPath, verbose=False):
     tables = camelot.read_pdf(
         pdfPath, flavor='stream', pages='1')
 
-    summary = tables[0].df.loc[5:, [0, 5]]
+    # Find the position of the first data row (Hokkaido)
+    first_row = 6
+    if tables[0].df.loc[first_row][0] != '北海道':
+        first_row = 7
+        if tables[0].df.loc[first_row][0] != '北海道':
+            print('Unable to find first row.')
+            print(tables[0].df.to_string())
+            return []
+
+    summary = tables[0].df.loc[first_row:, [0, 6]]
+
+    if verbose:
+        print(tables[0].df.to_string())
 
     prefectureValues = []
     for index, row in summary.iterrows():
+
         prefecture = row[0]
         prefecture = re.sub('※[0-9]', '', prefecture)
         prefecture = re.sub('\s', '', prefecture)
 
-        value = row[5]
+        value = row[6]
         value = re.sub('※[0-9] ', '', value)
         value = re.sub('[^0-9]+', '', value)
-        # print('%s:  %s' % (prefecture, value))
+
+        if verbose:
+            print('%s:  %s' % (prefecture, value))
         prefectureValues.append((prefecture, value))
 
     # Strip last two rows
@@ -278,7 +293,7 @@ def writeSumByDay(sheet, valueDate, values):
         body=rowBody).execute()
 
 
-def writePrefectureData(sheet, values):
+def writePrefectureData(sheet, values, verbose=False):
     # Check the values
     if 'prefectureRecoveries' not in values:
         raise ValueError('prefectureRecoveries values are unavailable')
@@ -287,8 +302,9 @@ def writePrefectureData(sheet, values):
     if 'portRecoveries' not in values or values['portRecoveries'] < 1:
         raise ValueError('portRecoveries are unavailable')
 
-    # result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
-    # print(result)
+    if verbose:
+        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
+        print(result)
 
     todaysValues = []
     for v in values['prefectureRecoveries']:
@@ -426,6 +442,7 @@ if __name__ == '__main__':
     parser.add_argument('--outputText', action="store_true")
     parser.add_argument('--outputImages', action="store_true")
     parser.add_argument('--writeResults', action='store_true')
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
     reportUrl = None
@@ -451,7 +468,7 @@ if __name__ == '__main__':
         if reportPdfData:
             with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
                 temp.write(reportPdfData)
-                recoveries = extractRecoveryNumbers(temp.name)
+                recoveries = extractRecoveryNumbers(temp.name, args.verbose)
                 summaryValues['prefectureRecoveries'] = recoveries
 
     if args.extractSummary and summaryTableUrl:
