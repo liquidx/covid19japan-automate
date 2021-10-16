@@ -372,7 +372,7 @@ const findAndWriteSummary = (date, writeToSpreadsheet = false, pageCount = 5) =>
   const matchDate = DateTime.fromISO(date).toFormat("yyyyMMdd");
   return latestNhkArticles(fetch, pageCount).then((articles) => {
     let summaryArticleUrl = "";
-    const summaryArticleTitlePattern = new RegExp("(【国内感染】|【国内】|全国で|全国の感染発表|国内感染確認)");
+    const summaryArticleTitlePattern = new RegExp("(【国内感染】|【国内】|全国で|全国の感染発表|国内感染確認|国内の新たな感染確認)");
     for (const article of articles) {
       if (article.link.match(`/${matchDate}/`) && article.title.match(summaryArticleTitlePattern)) {
         summaryArticleUrl = NHKNEWS_BASE_URL + article.link;

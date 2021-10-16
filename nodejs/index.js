@@ -3,6 +3,7 @@ const { DateTime } = require("luxon");
 const {
   updatePatientData,
   findAndWriteSummary,
+  updatesForPatientDataFromNhkArticles,
   getAllArticles,
 } = require("./nhk_spreadsheet");
 
@@ -42,11 +43,7 @@ const countWithActionUrl = (article, confirmedOrDeath) => {
   return "";
 };
 
-exports.updatePatientData = async (req, res) => {
-  if (req.method !== "POST") {
-    res.status(500).send("Expecting POST method");
-  }
-
+exports.nhkArticlesUpdate = async (req, res) => {
   let date = DateTime.utc().plus({ hours: 9 }).toISODate();
   if (req.query.yesterday) {
     date = DateTime.utc().plus({ hours: 9 }).minus({ days: 1 }).toISODate();
@@ -54,19 +51,15 @@ exports.updatePatientData = async (req, res) => {
     date = req.query.date;
   }
 
-  // express automatically parses JSON bodies.
-  const prefecturePatientCounts = req.body;
-  if (!prefecturePatientCounts) {
-    res.status(500).send("Expecting JSON body");
-  }
+  const shouldWrite = !!req.query.write;
 
-  let write = false;
-  if (req.query.write) {
-    write = true;
+  const patientDataUpdates = await updatesForPatientDataFromNhkArticles(date);
+  if (shouldWrite) {
+    const writeResult = await updatePatientData(date, patientDataUpdates, shouldWrite);
+    res.status(200).send(`OK ${writeResult}`);
+    return writeResult;
   }
-
-  const result = await updatePatientData(date, prefecturePatientCounts, write);
-  res.status(200).send(`${result}`);
+  return res.status(200).send(JSON.stringify(patientDataUpdates, null, "  "));
 };
 
 exports.nhkSummary = (req, res) => {

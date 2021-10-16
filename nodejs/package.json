@@ -6,10 +6,10 @@
   "scripts": {
     "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --region us-central1 --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=120",
     "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
-    "deploy-patients": "gcloud functions deploy updatePatientData --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
+    "deploy-articles-update": "gcloud functions deploy nhkArticlesUpdate --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
     "debug-summary": "npx @google-cloud/functions-framework --target=nhkSummary",
     "debug-articles": "npx @google-cloud/functions-framework --target=nhkArticles",
-    "debug-patients": "npx @google-cloud/functions-framework --target=updatePatientData"
+    "debug-articles-update": "npx @google-cloud/functions-framework --target=nhkArticlesUpdate"
   },
   "repository": {
     "type": "git",
