@@ -6,6 +6,7 @@ const fetch = require("make-fetch-happen");
 const {
   extractAndWriteSummary,
   findAndWriteSummary,
+  updatesForPatientDataFromNhkArticles,
   getAllArticles,
   updatePatientData,
 } = require("./nhk_spreadsheet");
@@ -22,12 +23,7 @@ const mhlw = () => {
   });
 };
 
-const nhk = (options) => {
-  if (!options.date && !options.list && !(options.today || options.yesterday) && !options.url) {
-    program.help();
-    return;
-  }
-
+const getDateFromOptions = (options) => {
   let { date } = options;
   if (options.today) {
     date = DateTime.utc().plus({ hours: 9 }).toISODate();
@@ -39,6 +35,35 @@ const nhk = (options) => {
       .minus({ days: 1 })
       .toISODate();
   }
+  return date;
+};
+
+const nhkBatch = async (options) => {
+  if (!(options.date || options.today || options.yesterday)) {
+    program.help();
+    return;
+  }
+
+  const date = getDateFromOptions(options);
+  const patientDataUpdates = await updatesForPatientDataFromNhkArticles(date, options.prefecture);
+  console.log(patientDataUpdates);
+
+  if (options.output) {
+    fs.writeFileSync(options.output, JSON.stringify(patientDataUpdates, null, "  "));
+  }
+  if (options.write) {
+    const writeResult = await updatePatientData(date, patientDataUpdates, true);
+    return writeResult;
+  }
+};
+
+const nhk = (options) => {
+  if (!options.date && !options.list && !(options.today || options.yesterday) && !options.url) {
+    program.help();
+    return;
+  }
+
+  const date = getDateFromOptions(options);
 
   const outputResults = (result) => {
     if (options.rawValues) {
@@ -73,30 +98,6 @@ const nhk = (options) => {
       filteredArticles.forEach((article) => {
         console.log(`${article.date} ${article.prefecture} ${article.title} ${article.confirmed} ${article.deaths}`);
       });
-
-      if (options.output) {
-        const prefectureUpdates = {};
-        filteredArticles.forEach((article) => {
-          if (!article.prefecture) {
-            return;
-          }
-          prefectureUpdates[article.prefecture] = {};
-          if (article.confirmed) {
-            prefectureUpdates[article.prefecture].confirmed = {
-              count: article.confirmed,
-              source: article.source,
-            };
-          }
-          if (article.deaths) {
-            prefectureUpdates[article.prefecture].deceased = {
-              count: article.deaths,
-              source: article.source,
-            };
-          }
-        });
-
-        fs.writeFileSync(options.output, JSON.stringify(prefectureUpdates, null, "  "));
-      }
       console.log(filteredArticles.length);
     });
   } else if (options.url) {
@@ -107,36 +108,6 @@ const nhk = (options) => {
     // 25 is the max.
     findAndWriteSummary(date, options.write, 25).then(outputResults);
   }
-};
-
-const updateCounts = async (options) => {
-  let input = {
-    Tokyo: {
-      deceased: {
-        count: 6,
-      },
-    },
-  };
-  if (options.input) {
-    input = JSON.parse(fs.readFileSync(options.input));
-  }
-  if (!options.date) {
-    return "requires date";
-  }
-  if (options.remote) {
-    let url = `https://us-central1-covid19-analysis.cloudfunctions.net/updatePatientData?date=${options.date}`;
-    // let url = `http://localhost:8080/?date=${options.date}`;
-    if (options.write) {
-      url += "&write=1";
-    }
-    return axios.post(url, input)
-      .catch((error) => {
-        console.error(`Error: ${error.response.status} ${error.response.data}`);
-        return {};
-      })
-      .then((response) => console.log(response.data));
-  }
-  return updatePatientData(options.date, input, options.write);
 };
 
 const main = async () => {
@@ -158,16 +129,18 @@ const main = async () => {
     .option("--raw-values", "Print out raw values", false)
     .option("--today", "Execute for today.")
     .option("--yesterday", "Execute for yesterday.")
-    .option("--output <filename>", "Output to file")
     .action(nhk);
 
   program
-    .command("counts")
-    .option("-i, --input <file>", "Input JSON file with per-prefecture updates")
+    .command("nhk-batch")
+    .description("Get all articles for a day and write rows to the spreadsheet")
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
+    .option("--today", "Execute for today.")
+    .option("--yesterday", "Execute for yesterday.")
+    .option("--output <filename>", "Output updates to file")
+    .option("-p, --prefecture <prefecture>", "Only write prefecture")
     .option("-w, --write", "Write to spreadsheet")
-    .option("-r, --remote", "Execute remotely")
-    .action(updateCounts);
+    .action(nhkBatch);
 
   program.parse(process.argv);
 };

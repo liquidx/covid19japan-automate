@@ -64,5 +64,11 @@ cd nodejs; npm run debug-articles
 cd nodejs; npm run deploy-summary; npm run deploy-articles
 ```
 
+## Usage
+```
+# Takes all NHK articles and write rows for the patient counts we can extract from the headlines
+node run nhk-batch  --today  --write
+```
+
 # Auth
 `credentials.json` need to be created (see mhlw.py on how to create it. It also needs to be copied into both `python/` and `nodejs/`

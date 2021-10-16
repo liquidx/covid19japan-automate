@@ -86,7 +86,12 @@ const googleCredentials = () => {
 
 const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, isDeceased) => {
   let found = false;
+  let updated = false;
+  let writeToRow = -1;
   const matchStatus = isDeceased ? "Deceased" : null;
+
+  // Find the existing row from the loaded rows, if we find it
+  // update the row count supplied and set "updated" flag.
   for (let row = sheet.rowCount - loadedRows; row < sheet.rowCount; row += 1) {
     const rowPrefecture = sheet.getCell(row, columnPos.prefecture);
     const rowDateAnnounced = sheet.getCell(row, columnPos.dateAnnounced);
@@ -106,9 +111,10 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
       && rowDateAnnounced.formattedValue == date
       && rowStatus.value == matchStatus) {
       found = true;
-      console.log(`Found row for ${prefecture}.${date}.${matchStatus}`);
+      console.log(`Found row ${row} for ${prefecture}/${date}/${matchStatus}`);
       if (rowCount.value != inputData.count) {
         rowCount.value = parseInt(inputData.count, 10);
+        updated = true;
       }
       if (inputData.source) {
         rowSource.value = inputData.source;
@@ -117,10 +123,11 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
     }
   }
 
+  // If we could not find it, find an empty row or add a new row.
+  // then write the values in to the row found.
   if (!found) {
-    console.log(`Could not find row for ${prefecture}.${date}.${matchStatus}`);
+    console.log(`Could not find row for ${prefecture}/${date}/${matchStatus}`);
     // Find the next row with no rowId.
-    let writeToRow = -1;
     for (let row = sheet.rowCount - loadedRows; row < sheet.rowCount; row += 1) {
       const rowId = sheet.getCell(row, columnPos.id);
       if (!rowId.value) {
@@ -138,7 +145,7 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
       await sheet.updateProperties({ gridProperties });
       // // Load the added row.
       await sheet.loadCells({ startRowIndex: sheet.rowCount - 1, endRowIndex: sheet.rowCount + 1 });
-      console.log("Adding new row");
+      console.log(`Adding new row ${writeToRow}`);
     }
 
     const row = writeToRow;
@@ -152,6 +159,12 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
     sheet.getCell(row, columnPos.count).value = parseInt(inputData.count, 10);
     sheet.getCell(row, columnPos.source).value = inputData.source;
   }
+
+  // Commit changes to sheet if cells were updated or a new row was added.
+  if (updated || writeToRow != -1) {
+    await sheet.saveUpdatedCells();
+    console.log("Commiting changes.");
+  }
 };
 
 const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
@@ -162,15 +175,15 @@ const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
   const bufferSize = 100;
 
   const patientsSheet = doc.sheetsByTitle["Patient Data"];
-  console.log(patientsSheet.rowCount);
   await patientsSheet.loadCells({ startRowIndex: patientsSheet.rowCount - bufferSize });
 
   const updatedPrefectureSheets = [];
   for (const prefecture of Object.keys(prefectureCounts)) {
     const data = prefectureCounts[prefecture];
-    console.log(prefecture, data);
+    console.log("Data for ", prefecture, data);
     let sheet = patientsSheet;
     if (prefectureTabs.includes(prefecture)) {
+      console.log("Writing to sheet", prefecture);
       sheet = doc.sheetsByTitle[prefecture];
       await sheet.loadCells({ startRowIndex: sheet.rowCount - bufferSize });
       updatedPrefectureSheets.push(sheet);
@@ -375,7 +388,41 @@ const findAndWriteSummary = (date, writeToSpreadsheet = false, pageCount = 5) =>
   });
 };
 
+const updatesForPatientDataFromNhkArticles = async (date, prefecture) => {
+  const articles = await getAllArticles(20)
+    .then((result) => result
+      .filter((article) => (article.date === date))
+      .filter((article) => (!!article.prefecture))
+      .filter((article) => (!prefecture || prefecture === article.prefecture)));
+
+  articles.forEach((article) => {
+    console.log(`${article.date} ${article.prefecture} ${article.title} ${article.confirmed} ${article.deaths}`);
+  });
+
+  const prefectureUpdates = {};
+  articles.forEach((article) => {
+    if (!article.prefecture) {
+      return;
+    }
+    prefectureUpdates[article.prefecture] = {};
+    if (article.confirmed) {
+      prefectureUpdates[article.prefecture].confirmed = {
+        count: article.confirmed,
+        source: article.source,
+      };
+    }
+    if (article.deaths) {
+      prefectureUpdates[article.prefecture].deceased = {
+        count: article.deaths,
+        source: article.source,
+      };
+    }
+  });
+  return prefectureUpdates;
+};
+
 exports.extractAndWriteSummary = extractAndWriteSummary;
 exports.getAllArticles = getAllArticles;
 exports.findAndWriteSummary = findAndWriteSummary;
 exports.updatePatientData = updatePatientData;
+exports.updatesForPatientDataFromNhkArticles = updatesForPatientDataFromNhkArticles;
