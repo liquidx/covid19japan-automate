@@ -18,7 +18,11 @@ const fetch = require("make-fetch-happen");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { DateTime, Interval } = require("luxon");
 const {
-  extractDailySummary, sortedPrefectureCounts, latestNhkArticles, prefecturesFromJa,
+  extractDailySummary,
+  sortedPrefectureCounts,
+  latestNhkArticles,
+  prefecturesFromJa,
+  parseJapaneseNumber,
 } = require("./nhk");
 const {
   patientId,
@@ -310,14 +314,14 @@ const getAllArticles = (pageCount = 7) => latestNhkArticles(fetch, pageCount).th
 
   // headline patterns
   const confirmedPatientPatterns = [
-    new RegExp("([\\d]+)人感染確認", "iu"),
-    new RegExp("([\\d]+)人の感染確認", "iu"),
-    new RegExp("感染確認([\\d]+)人", "iu"),
+    new RegExp("([0-9０-９]+)人感染確認", "iu"),
+    new RegExp("([0-9０-９]+)人の感染確認", "iu"),
+    new RegExp("感染確認([0-9０-９]+)人", "iu"),
   ];
   const deceasedPatientPatterns = [
-    new RegExp("([\\d]+)人の死亡確認"),
-    new RegExp("([\\d]+)人死亡"),
-    new RegExp("([\\d]+)人が死亡"),
+    new RegExp("([0-9０-９]+)人の死亡確認"),
+    new RegExp("([0-9０-９]+)人死亡"),
+    new RegExp("([0-9０-９]+)人が死亡"),
   ];
   const prefecturePattern = new RegExp(`(${Object.keys(prefecturesFromJa).join("|")})`);
 
@@ -351,10 +355,10 @@ const getAllArticles = (pageCount = 7) => latestNhkArticles(fetch, pageCount).th
         prefecture: prefecturesFromJa[prefectureMatch[1]],
       };
       if (confirmedMatch) {
-        report.confirmed = confirmedMatch;
+        report.confirmed = parseJapaneseNumber(confirmedMatch);
       }
       if (deathMatch) {
-        report.deaths = deathMatch;
+        report.deaths = parseJapaneseNumber(deathMatch);
       }
       structuredReports.push(report);
     } else {

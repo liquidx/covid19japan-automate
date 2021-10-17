@@ -278,3 +278,4 @@ exports.prefecturesFromJaShort = prefecturesFromJaShort;
 exports.prefecturesFromJa = prefecturesFromJa;
 exports.prefectureCountsInEnglish = prefectureCountsInEnglish;
 exports.latestNhkArticles = latestNhkArticles;
+exports.parseJapaneseNumber = parseJapaneseNumber;
