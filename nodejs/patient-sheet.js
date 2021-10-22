@@ -51,7 +51,7 @@ const PREFECTURE_PREFIX = {
 
 const patientId = (prefecture, date) => {
   const prefix = PREFECTURE_PREFIX[prefecture];
-  const dateString = date.replaceAll('-', '');
+  const dateString = date.replace(/-/g, '');
   return `${prefix}${dateString}`
 }
 
