@@ -36,7 +36,7 @@ FLASK_ENV=development FLASK_APP=main.py flask run
 python3  mhlw.py --extractSummary --verbose
 
 # Write to spreadsheet
-python3  mhlw.py --extractSummary --verbose --writeSummary
+python3  mhlw.py --extractSummary --verbose --writeResults
 
 # End venv
 deactivate
