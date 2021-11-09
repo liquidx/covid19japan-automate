@@ -127,6 +127,16 @@ def extractCasesRecoveryNumbers(pdfPath, verbose=False):
     tables = camelot.read_pdf(
         pdfPath, flavor='stream', pages='1')
 
+    # Find the position of the recovery column
+    recovery_col = 7
+    recovery_title_row = 1
+    for index, cell in tables[0].df.loc[recovery_title_row].items():
+        if re.match('退院', cell):
+            recovery_col = index
+            print('found recovery col at %d: %s' % (index, cell))
+            break
+
+
     # Find the position of the first data row (Hokkaido)
     first_row = 6
     if tables[0].df.loc[first_row][0] != '北海道':
@@ -136,7 +146,7 @@ def extractCasesRecoveryNumbers(pdfPath, verbose=False):
             print(tables[0].df.to_string())
             return []
 
-    summary = tables[0].df.loc[first_row:, [0, 2, 6]]
+    summary = tables[0].df.loc[first_row:, [0, 2, recovery_col]]
 
     if verbose:
         print(tables[0].df.to_string())
@@ -152,7 +162,7 @@ def extractCasesRecoveryNumbers(pdfPath, verbose=False):
         cases = re.sub('※[0-9] ', '', cases)
         cases = re.sub('[^0-9]+', '', cases)
 
-        recovery = row[6]
+        recovery = row[recovery_col]
         recovery = re.sub('※[0-9] ', '', recovery)
         recovery = re.sub('[^0-9]+', '', recovery)
 
