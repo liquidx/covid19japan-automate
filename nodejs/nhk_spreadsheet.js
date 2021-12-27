@@ -408,7 +408,11 @@ const updatesForPatientDataFromNhkArticles = async (date, prefecture) => {
     if (!article.prefecture) {
       return;
     }
-    prefectureUpdates[article.prefecture] = {};
+
+    if (!prefectureUpdates[article.prefecture]) {
+      prefectureUpdates[article.prefecture] = {};
+    }
+
     if (article.confirmed) {
       prefectureUpdates[article.prefecture].confirmed = {
         count: article.confirmed,
