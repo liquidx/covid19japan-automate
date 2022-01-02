@@ -53,7 +53,7 @@ const nhkBatch = async (options) => {
   }
   if (options.write) {
     const writeResult = await updatePatientData(date, patientDataUpdates, true);
-    return writeResult;
+    console.log(writeResult);
   }
 };
 

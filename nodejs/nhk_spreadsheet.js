@@ -206,9 +206,9 @@ const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
     for (const sheet of updatedPrefectureSheets) {
       await sheet.saveUpdatedCells();
     }
-    return true;
+    return { result: "updated", prefectureCounts };
   }
-  return false;
+  return { result: "no change", prefectureCounts };
 };
 
 const writeNhkSummary = async (credentialsJson, dateString, url, prefectureCounts, otherCounts) => {

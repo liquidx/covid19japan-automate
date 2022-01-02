@@ -68,7 +68,10 @@ cd nodejs; npm run deploy-summary; npm run deploy-articles
 ```
 # Takes all NHK articles and write rows for the patient counts we can extract from the headlines
 node run nhk-batch  --today  --write
+
+# Extracts from the articles
 ```
 
 # Auth
 `credentials.json` need to be created (see mhlw.py on how to create it. It also needs to be copied into both `python/` and `nodejs/`
+`credentials-telegram.json` is needed to report crawl status to telegram

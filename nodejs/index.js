@@ -6,6 +6,8 @@ const {
   updatesForPatientDataFromNhkArticles,
   getAllArticles,
 } = require("./nhk_spreadsheet");
+const { notify } = require("./notify");
+const { textForWriteResult } = require("./text");
 
 const actionUrl = (prefecture, date, source, confirmed, deaths) => {
   if (confirmed) {
@@ -56,7 +58,9 @@ exports.nhkArticlesUpdate = async (req, res) => {
   const patientDataUpdates = await updatesForPatientDataFromNhkArticles(date);
   if (shouldWrite) {
     const writeResult = await updatePatientData(date, patientDataUpdates, shouldWrite);
-    res.status(200).send(`OK ${writeResult}`);
+    res.status(200).send(`OK ${JSON.stringify(writeResult)}`);
+
+    await notify(`Patient Data Updated: ${textForWriteResult(writeResult)}`);
     return writeResult;
   }
   return res.status(200).send(JSON.stringify(patientDataUpdates, null, "  "));
@@ -76,7 +80,8 @@ exports.nhkSummary = (req, res) => {
   }
 
   findAndWriteSummary(date, writeToSpreadsheet).then((result) => {
-    res.send(JSON.stringify(result));
+    notify(`NHK Summary written for ${JSON.stringify(result, null, 2)}`);
+    res.send(JSON.stringify(result, null, 2));
   });
 };
 

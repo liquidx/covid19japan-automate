@@ -33,7 +33,8 @@
     "image-data-uri": "^2.0.1",
     "lodash": "^4.17.20",
     "luxon": "^1.25.0",
-    "make-fetch-happen": "^8.0.14"
+    "make-fetch-happen": "^8.0.14",
+    "telegram-bot-api": "^2.0.1"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^1.7.1",
