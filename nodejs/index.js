@@ -103,7 +103,7 @@ const doNhkSummary = (req, res) => {
   }
 
   findAndWriteSummary(date, writeToSpreadsheet).then((result) => {
-    notify(`NHK Summary written for ${JSON.stringify(result, null, 2)}`);
+    notify(`NHK Summary: ${JSON.stringify(result, null, 2)}`);
     res.send(JSON.stringify(result, null, 2));
   });
 };
