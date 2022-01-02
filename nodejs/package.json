@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "Tools for automating extraction of data from NHK articles",
   "main": "index.js",
+  "engines": {
+    "node": "14"
+  },
   "scripts": {
-    "deploy-summary": "gcloud functions deploy nhkSummary --project covid19-analysis --region us-central1 --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=120",
-    "deploy-articles": "gcloud functions deploy nhkArticles --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
-    "deploy-articles-update": "gcloud functions deploy nhkArticlesUpdate --project covid19-analysis --region us-central1  --runtime nodejs12 --trigger-http --allow-unauthenticated --timeout=240",
-    "debug-summary": "npx @google-cloud/functions-framework --target=nhkSummary",
-    "debug-articles": "npx @google-cloud/functions-framework --target=nhkArticles",
-    "debug-articles-update": "npx @google-cloud/functions-framework --target=nhkArticlesUpdate"
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "deploy": "firebase deploy --only functions",
+    "test-functions": "npx functions-framework --target=nhkArticles"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,8 @@
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.5",
     "commander": "^7.2.0",
+    "firebase-admin": "^10.0.1",
+    "firebase-functions": "^3.16.0",
     "google-spreadsheet": "^3.1.15",
     "image-data-uri": "^2.0.1",
     "lodash": "^4.17.20",

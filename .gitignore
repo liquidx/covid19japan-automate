@@ -1,5 +1,9 @@
 *.pyc
 .DS_Store
+firebase-debug.log
+ui-debug.log
 
+credentials-*.json
+credentials.json
 node_modules/
 venv/
