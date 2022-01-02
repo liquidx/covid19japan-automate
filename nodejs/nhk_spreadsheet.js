@@ -426,19 +426,26 @@ const updatesForPatientDataFromNhkArticles = async (date, prefecture) => {
       prefectureUpdates[article.prefecture] = {};
     }
 
+    // Use the article where the number is the highest confirmed case count.
     if (article.confirmed) {
-      prefectureUpdates[article.prefecture].confirmed = {
-        count: article.confirmed,
-        source: article.source,
-        title: article.title,
-      };
+      if (!prefectureUpdates[article.prefecture].confirmed || prefectureUpdates[article.prefecture].confirmed.count < article.confirmed) {
+        prefectureUpdates[article.prefecture].confirmed = {
+          count: article.confirmed,
+          source: article.source,
+          title: article.title,
+        };
+      }
     }
+
+    // Use the article where the number is the highest death case count.
     if (article.deaths) {
-      prefectureUpdates[article.prefecture].deceased = {
-        count: article.deaths,
-        source: article.source,
-        title: article.title,
-      };
+      if (!prefectureUpdates[article.prefecture].deceased || prefectureUpdates[article.prefecture].deceased.count < article.deaths) {
+        prefectureUpdates[article.prefecture].deceased = {
+          count: article.deaths,
+          source: article.source,
+          title: article.title,
+        };
+      }
     }
   });
   return prefectureUpdates;
