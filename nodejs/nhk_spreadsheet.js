@@ -91,6 +91,7 @@ const googleCredentials = () => {
 const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, isDeceased) => {
   let found = false;
   let updated = false;
+  let added = false;
   let writeToRow = -1;
   const matchStatus = isDeceased ? "Deceased" : null;
 
@@ -162,13 +163,17 @@ const updateOrAddRow = async (prefecture, date, sheet, loadedRows, inputData, is
     sheet.getCell(row, columnPos.status).value = matchStatus;
     sheet.getCell(row, columnPos.count).value = parseInt(inputData.count, 10);
     sheet.getCell(row, columnPos.source).value = inputData.source;
+    added = true;
   }
 
   // Commit changes to sheet if cells were updated or a new row was added.
-  if (updated || writeToRow != -1) {
+  if (updated || added) {
     await sheet.saveUpdatedCells();
     console.log("Commiting changes.");
+    return true;
   }
+
+  return false;
 };
 
 const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
@@ -180,6 +185,8 @@ const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
 
   const patientsSheet = doc.sheetsByTitle["Patient Data"];
   await patientsSheet.loadCells({ startRowIndex: patientsSheet.rowCount - bufferSize });
+
+  const updatedRows = [];
 
   const updatedPrefectureSheets = [];
   for (const prefecture of Object.keys(prefectureCounts)) {
@@ -194,10 +201,16 @@ const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
     }
 
     if (data.deceased) {
-      await updateOrAddRow(prefecture, date, sheet, bufferSize, data.deceased, true);
+      const didUpdate = await updateOrAddRow(prefecture, date, sheet, bufferSize, data.deceased, true);
+      if (didUpdate) {
+        updatedRows.push({ prefecture, deceased: data.deceased });
+      }
     }
     if (data.confirmed) {
-      await updateOrAddRow(prefecture, date, sheet, bufferSize, data.confirmed, false);
+      const didUpdate = await updateOrAddRow(prefecture, date, sheet, bufferSize, data.confirmed, false);
+      if (didUpdate) {
+        updatedRows.push({ prefecture, confirmed: data.confirmed });
+      }
     }
   }
 
@@ -206,9 +219,9 @@ const updatePatientData = async (date, prefectureCounts, shouldWrite) => {
     for (const sheet of updatedPrefectureSheets) {
       await sheet.saveUpdatedCells();
     }
-    return { result: "updated", prefectureCounts };
+    return { result: "updated", updatedRows };
   }
-  return { result: "no change", prefectureCounts };
+  return { result: "no change", updatedRows };
 };
 
 const writeNhkSummary = async (credentialsJson, dateString, url, prefectureCounts, otherCounts) => {
@@ -417,12 +430,14 @@ const updatesForPatientDataFromNhkArticles = async (date, prefecture) => {
       prefectureUpdates[article.prefecture].confirmed = {
         count: article.confirmed,
         source: article.source,
+        title: article.title,
       };
     }
     if (article.deaths) {
       prefectureUpdates[article.prefecture].deceased = {
         count: article.deaths,
         source: article.source,
+        title: article.title,
       };
     }
   });

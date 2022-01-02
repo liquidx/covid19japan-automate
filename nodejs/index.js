@@ -82,7 +82,9 @@ const doNhkArticlesUpdate = async (req, res) => {
     const writeResult = await updatePatientData(date, patientDataUpdates, shouldWrite);
     res.status(200).send(`OK ${JSON.stringify(writeResult)}`);
 
-    await notify(`Patient Data Updated: ${textForWriteResult(writeResult)}`);
+    console.log(textForWriteResult(writeResult));
+
+    await notify(`[nhkArticlesUpdate] Updated: ${textForWriteResult(writeResult)}`);
     return writeResult;
   }
   return res.status(200).send(JSON.stringify(patientDataUpdates, null, "  "));

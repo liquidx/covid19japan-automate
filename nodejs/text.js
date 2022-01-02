@@ -1,13 +1,13 @@
 const textForWriteResult = (result) => {
   let textDescription = `[${result.result}]:\n`;
-  for (const prefecture of Object.keys(result.prefectureCounts)) {
-    const counts = result.prefectureCounts[prefecture];
-    if (counts.confirmed) {
-      textDescription += `${prefecture} ${counts.confirmed.count} cases.\n`;
+  for (const row of result.updatedRows) {
+    const { prefecture } = row;
+    if (row.confirmed) {
+      textDescription += `${prefecture} ${row.confirmed.count} cases. ${row.confirmed.title}\n`;
     }
 
-    if (counts.deceased) {
-      textDescription += `${prefecture} ${counts.confirmed.count} deaths.\n`;
+    if (row.deceased) {
+      textDescription += `${prefecture} ${row.deceased.count} deaths. ${row.deceased.title}\n`;
     }
   }
   return textDescription;
