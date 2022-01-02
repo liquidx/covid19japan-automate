@@ -1,5 +1,6 @@
 const { DateTime } = require("luxon");
 const functions = require("firebase-functions");
+const fetch = require("make-fetch-happen");
 
 const {
   updatePatientData,
@@ -8,6 +9,10 @@ const {
   getAllArticles,
   verifyNhkNumbers,
 } = require("./nhk_spreadsheet");
+const {
+  getLatestPortCovidReport,
+  getPortCaseCount,
+} = require("./mhlw");
 const { notify } = require("./notify");
 const { textForWriteResult } = require("./text");
 const proxy = require("./proxy");
@@ -177,4 +182,33 @@ exports.verifyCovidSheet = functions.region("us-central1").runWith(lightTask).ht
 
   notify(textResult);
   res.status(200).send(`<pre>${textResult}</pre>`);
+});
+
+exports.mhlwPortUpdate = functions.region("us-central1").runWith(lightTask).https.onRequest(async (req, res) => {
+  let writeToSpreadsheet = false;
+  if (req.query.write) {
+    writeToSpreadsheet = true;
+  }
+
+  getLatestPortCovidReport(fetch).then(async (url) => {
+    const result = await getPortCaseCount(fetch, url);
+    console.log(result);
+
+    let writeResult = {};
+    if (result.count && writeToSpreadsheet) {
+      const updates = {
+        "Port Quarantine": {
+          confirmed: {
+            count: result.count,
+            source: url,
+          },
+        },
+      };
+      writeResult = await updatePatientData(result.date, updates, true);
+      res.send(JSON.stringify(writeResult.null, 2));
+      return;
+    }
+
+    res.send(JSON.stringify(result, null, 2));
+  });
 });

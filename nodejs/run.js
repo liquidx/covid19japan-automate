@@ -13,7 +13,9 @@ const {
 } = require("./nhk_spreadsheet");
 const {
   getLatestCovidReport,
+  getLatestPortCovidReport,
   getSummaryTableFromReport,
+  getPortCaseCount,
 } = require("./mhlw");
 const credentials = require("./credentials.json");
 
@@ -21,6 +23,28 @@ const mhlw = () => {
   getLatestCovidReport(fetch).then((url) => {
     console.log(url);
     getSummaryTableFromReport(fetch, url, credentials);
+  });
+};
+
+const mhlwPortCases = (options) => {
+  getLatestPortCovidReport(fetch).then(async (url) => {
+    const result = await getPortCaseCount(fetch, url);
+    console.log(result);
+
+    if (result.count) {
+      const updates = {
+        "Port Quarantine": {
+          confirmed: {
+            count: result.count,
+            source: url,
+          },
+        },
+      };
+      if (options.write) {
+        const writeResult = await updatePatientData(result.date, updates, true);
+        console.log(writeResult);
+      }
+    }
   });
 };
 
@@ -115,8 +139,14 @@ const main = async () => {
   program.version("0.0.1");
 
   program
-    .command("mhlw")
+    .command("mhlw-summary")
     .action(mhlw);
+
+  program
+    .command("mhlw-port")
+    .option("-w, --write", "Write to spreadsheet")
+    .action(mhlwPortCases);
+
   program
     .command("nhk")
     .option("-d, --date <date>", "Date in YYYY-MM-DD format")
