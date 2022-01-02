@@ -6,10 +6,11 @@ const {
   findAndWriteSummary,
   updatesForPatientDataFromNhkArticles,
   getAllArticles,
+  verifyNhkNumbers,
 } = require("./nhk_spreadsheet");
 const { notify } = require("./notify");
 const { textForWriteResult } = require("./text");
-const proxy = require("./proxy.js");
+const proxy = require("./proxy");
 
 const lightTask = {
   timeoutSeconds: 540,
@@ -103,7 +104,11 @@ const doNhkSummary = (req, res) => {
   }
 
   findAndWriteSummary(date, writeToSpreadsheet).then((result) => {
-    notify(`NHK Summary: ${JSON.stringify(result, null, 2)}`);
+    if (result.error) {
+      notify(`NHK Summary Error: ${result.date} - ${result.error}`);
+    } else {
+      notify(`NHK Summary Done: ${result.date} - ${result.writeStatus} Recoveries: ${result.counts.recoveredTotal}`);
+    }
     res.send(JSON.stringify(result, null, 2));
   });
 };
@@ -151,3 +156,24 @@ const doNhkArticles = (req, res) => {
   });
 };
 exports.nhkArticles = functions.region("us-central1").runWith(lightTask).https.onRequest(doNhkArticles);
+
+exports.nhkVerify = functions.region("us-central1").runWith(lightTask).https.onRequest(async (req, res) => {
+  // Check if we have today's numbers.
+  const result = await verifyNhkNumbers();
+  let textResult = `NHK Summary for Today ${result.date}: ${result.hasLatestNhkSummary}\n`;
+  if (result.hasPrefectureDifferences) {
+    textResult += "Differences: \n";
+    for (const diff of result.hasPrefectureDifferences) {
+      textResult += `${diff.prefecture}: Ours = ${diff.ourValue} NHK = ${diff.nhkValue}\n`;
+    }
+  }
+  if (result.hasNegativeActive) {
+    textResult += "Negative Active: \n";
+    for (const diff of result.hasNegativeActive) {
+      textResult += `${diff.prefecture}: Active = ${diff.activeValue}\n`;
+    }
+  }
+
+  notify(textResult);
+  res.status(200).send(`<pre>${textResult}</pre>`);
+});

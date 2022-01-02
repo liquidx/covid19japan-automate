@@ -429,8 +429,58 @@ const updatesForPatientDataFromNhkArticles = async (date, prefecture) => {
   return prefectureUpdates;
 };
 
+const verifyNhkNumbers = async () => {
+  const doc = new GoogleSpreadsheet(SPREADSHEET_ID);
+  await doc.useServiceAccountAuth(googleCredentials());
+  await doc.loadInfo(); // loads document properties and worksheets
+
+  const nhkSheet = doc.sheetsByTitle.NHK;
+  await nhkSheet.loadCells("A1:I59");
+
+  const today = DateTime.utc().plus({ hours: 9 }).toISODate();
+  const results = { date: today };
+  // Check if the latest column has today's summary
+  const dateCell = nhkSheet.getCellByA1("H1");
+  const dateValue = toGoogleSheetDateValue(today);
+  results.hasLatestNhkSummary = (dateValue == dateCell.value);
+
+  // Check what differences in numbers we have
+  const hasPrefectureDifferences = [];
+  for (let row = 3; row < 58; row += 1) {
+    const ourValue = nhkSheet.getCell(row, 3).value;
+    const nhkValue = nhkSheet.getCell(row, 4).value;
+    const prefecture = nhkSheet.getCell(row, 5).value;
+    if (ourValue != nhkValue) {
+      hasPrefectureDifferences.push({ prefecture, ourValue, nhkValue });
+    }
+  }
+  if (hasPrefectureDifferences) {
+    results.hasPrefectureDifferences = hasPrefectureDifferences;
+  }
+
+  // Check Prefecture Data Sheet
+  const prefectureDataSheet = doc.sheetsByTitle["Prefecture Data"];
+  await prefectureDataSheet.loadCells("A1:O50");
+
+  // Check if there are any negative active numbers
+  const hasNegativeActive = [];
+  for (let row = 2; row < 50; row += 1) {
+    const activeValue = prefectureDataSheet.getCell(row, 12).value;
+    if (activeValue < 0) {
+      const prefecture = prefectureDataSheet.getCell(row, 1).value;
+      hasNegativeActive.push({ prefecture, activeValue });
+    }
+  }
+  if (hasNegativeActive.count) {
+    results.hasNegativeActive = hasNegativeActive;
+  }
+
+  return results;
+};
+
 exports.extractAndWriteSummary = extractAndWriteSummary;
 exports.getAllArticles = getAllArticles;
 exports.findAndWriteSummary = findAndWriteSummary;
 exports.updatePatientData = updatePatientData;
 exports.updatesForPatientDataFromNhkArticles = updatesForPatientDataFromNhkArticles;
+exports.verifyNhkNumbers = verifyNhkNumbers;

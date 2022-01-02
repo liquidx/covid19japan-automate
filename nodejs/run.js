@@ -9,6 +9,7 @@ const {
   updatesForPatientDataFromNhkArticles,
   getAllArticles,
   updatePatientData,
+  verifyNhkNumbers,
 } = require("./nhk_spreadsheet");
 const {
   getLatestCovidReport,
@@ -141,6 +142,15 @@ const main = async () => {
     .option("-p, --prefecture <prefecture>", "Only write prefecture")
     .option("-w, --write", "Write to spreadsheet")
     .action(nhkBatch);
+
+  program
+    .command("verify-sheet")
+    .description("Verify data in the sheet")
+    .option("-d, --date <date>", "Date in YYYY-MM-DD format")
+    .action(async (options) => {
+      const result = await verifyNhkNumbers();
+      console.log(result);
+    });
 
   program.parse(process.argv);
 };
