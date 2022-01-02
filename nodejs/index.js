@@ -26,7 +26,7 @@ const heavyTask = {
   memory: "4GB",
 };
 
-exports.proxy = functions.region("us-central1").runWith(standardTask).https.onRequest((req, res) => {
+exports.proxy = functions.region("us-central1").runWith(lightTask).https.onRequest((req, res) => {
   proxy.fetch(req, res);
 });
 
@@ -107,7 +107,7 @@ const doNhkSummary = (req, res) => {
     res.send(JSON.stringify(result, null, 2));
   });
 };
-exports.nhkSummary = functions.region("us-central1").runWith(standardTask).https.onRequest(doNhkSummary);
+exports.nhkSummary = functions.region("us-central1").runWith(lightTask).https.onRequest(doNhkSummary);
 
 const doNhkArticles = (req, res) => {
   getAllArticles(20).then((articles) => {
@@ -150,4 +150,4 @@ const doNhkArticles = (req, res) => {
     }
   });
 };
-exports.nhkArticles = functions.region("us-central1").runWith(standardTask).https.onRequest(doNhkArticles);
+exports.nhkArticles = functions.region("us-central1").runWith(lightTask).https.onRequest(doNhkArticles);
