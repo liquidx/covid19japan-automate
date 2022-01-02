@@ -105,9 +105,9 @@ const doNhkSummary = (req, res) => {
 
   findAndWriteSummary(date, writeToSpreadsheet).then((result) => {
     if (result.error) {
-      notify(`NHK Summary Error: ${result.date} - ${result.error}`);
+      notify(`[getNhkSummary] Error: ${result.date} - ${result.error}`);
     } else {
-      notify(`NHK Summary Done: ${result.date} - ${result.writeStatus} Recoveries: ${result.counts.recoveredTotal}`);
+      notify(`[getNhkSummary]  Done: ${result.date} - ${result.writeStatus} Recoveries: ${result.counts.recoveredTotal}`);
     }
     res.send(JSON.stringify(result, null, 2));
   });
@@ -157,10 +157,9 @@ const doNhkArticles = (req, res) => {
 };
 exports.nhkArticles = functions.region("us-central1").runWith(lightTask).https.onRequest(doNhkArticles);
 
-exports.nhkVerify = functions.region("us-central1").runWith(lightTask).https.onRequest(async (req, res) => {
-  // Check if we have today's numbers.
+exports.verifyCovidSheet = functions.region("us-central1").runWith(lightTask).https.onRequest(async (req, res) => {
   const result = await verifyNhkNumbers();
-  let textResult = `NHK Summary for Today ${result.date}: ${result.hasLatestNhkSummary}\n`;
+  let textResult = `[verifyCovidSheet]\nNHK Summary for Today ${result.date}: ${result.hasLatestNhkSummary}\n`;
   if (result.hasPrefectureDifferences) {
     textResult += "Differences: \n";
     for (const diff of result.hasPrefectureDifferences) {
