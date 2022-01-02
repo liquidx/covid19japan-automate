@@ -461,7 +461,7 @@ const verifyNhkNumbers = async () => {
 
   // Check what differences in numbers we have
   const hasPrefectureDifferences = [];
-  for (let row = 3; row < 58; row += 1) {
+  for (let row = 3; row < 50; row += 1) {
     const ourValue = nhkSheet.getCell(row, 3).value;
     const nhkValue = nhkSheet.getCell(row, 4).value;
     const prefecture = nhkSheet.getCell(row, 5).value;
