@@ -136,7 +136,6 @@ def extractCasesRecoveryNumbers(pdfPath, verbose=False):
             print('found recovery col at %d: %s' % (index, cell))
             break
 
-
     # Find the position of the first data row (Hokkaido)
     first_row = 6
     if tables[0].df.loc[first_row][0] != '北海道':
@@ -181,13 +180,13 @@ def extractImageAreas(image, normalizedSize):
     rowHeight = 18
     doubleRowHeight = 36
     secondRowY = 86
-    lastRowY = 144
+    lastRowY = 145
     pcrColumnX = 70
     pcrColumnWidth = 88
     criticalColumnX = 320
     criticalColumnWidth = 76
     recoveryColumnX = 400
-    recoveryColumnWidth = 80
+    recoveryColumnWidth = 100
     deathsColumnX = 510
     deathsColumnWidth = 68
 
@@ -241,9 +240,9 @@ def extractDailySummary(imageUrl, outputImages):
     image = Image.open(imageData).convert(mode='RGBA')
     image.save('original.png')
     white = Image.new('RGBA', image.size, color='#ffffff')
-    #white.save('white.png')
+    # white.save('white.png')
     mergedImage = Image.alpha_composite(white, image)
-    #mergedImage.save('merged.png')
+    # mergedImage.save('merged.png')
     normalizedSize = (661, 181)
     mergedImage = mergedImage.resize(normalizedSize)
     mergedImage = mergedImage.convert(mode='L')
@@ -317,7 +316,8 @@ def writePrefectureData(sheet, values, verbose=False):
         raise ValueError('portRecoveries are unavailable')
 
     if verbose:
-        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="'Prefecture Data'!E3:E50").execute()
+        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
+                                    range="'Prefecture Data'!E3:E50").execute()
         print(result)
 
     results = []
@@ -343,8 +343,9 @@ def writePrefectureData(sheet, values, verbose=False):
         range="'Prefecture Data'!I3:I50",
         valueInputOption='USER_ENTERED',
         body={'values': todaysCases}).execute()
-    results.append(result)   
-    return results 
+    results.append(result)
+    return results
+
 
 def writeRecoveries(sheet, valueDate, values):
     # Check the values
@@ -496,7 +497,8 @@ if __name__ == '__main__':
         if reportPdfData:
             with tempfile.NamedTemporaryFile(suffix='.pdf') as temp:
                 temp.write(reportPdfData)
-                casesRecoveries = extractCasesRecoveryNumbers(temp.name, args.verbose)
+                casesRecoveries = extractCasesRecoveryNumbers(
+                    temp.name, args.verbose)
                 summaryValues['prefectureCasesRecoveries'] = casesRecoveries
 
     if args.extractSummary and summaryTableUrl:

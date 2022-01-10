@@ -14,6 +14,7 @@ We use Cloud Run and Cloud Build because these python tools need some extra depe
 that cannot be accessed in the Python Cloud Functions. (tesseract-ocr)
 
 ## Development Setup
+
 ```
 cd python
 python3 -m venv venv
@@ -32,6 +33,9 @@ cd python
 FLASK_ENV=development FLASK_APP=main.py flask run
 # request: http://localhost:5000/mhlw/today
 
+# Ensure Tesseract data is found (on mac)
+export TESSDATA_PREFIX=~/homebrew/share/tessdata
+
 # Test Command Line
 python3  mhlw.py --extractSummary --verbose
 
@@ -43,6 +47,7 @@ deactivate
 ```
 
 ## Deployment
+
 ```
 ./build.sh
 ./deploy.sh
@@ -54,17 +59,20 @@ These are nodejs functions that don't need any additional dependencies and can r
 in Cloud Functions.
 
 ## Development
+
 ```
 cd nodejs; npm run debug-summary
 cd nodejs; npm run debug-articles
 ```
 
 ## Deployment
+
 ```
 cd nodejs; npm run deploy-summary; npm run deploy-articles
 ```
 
 ## Usage
+
 ```
 # Takes all NHK articles and write rows for the patient counts we can extract from the headlines
 node run nhk-batch  --today  --write
@@ -73,5 +81,6 @@ node run nhk-batch  --today  --write
 ```
 
 # Auth
+
 `credentials.json` need to be created (see mhlw.py on how to create it. It also needs to be copied into both `python/` and `nodejs/`
 `credentials-telegram.json` is needed to report crawl status to telegram
