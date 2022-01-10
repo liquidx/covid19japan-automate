@@ -326,6 +326,10 @@ const getAllArticles = (pageCount = 7) => latestNhkArticles(fetch, pageCount).th
   const structuredReports = [];
 
   // headline patterns
+  const ignorePatterns = [
+    new RegExp("オミクロン株", "iu"),
+  ];
+
   const confirmedPatientPatterns = [
     new RegExp("([0-9０-９]+)人感染確認", "iu"),
     new RegExp("([0-9０-９]+)人の感染確認", "iu"),
@@ -341,6 +345,17 @@ const getAllArticles = (pageCount = 7) => latestNhkArticles(fetch, pageCount).th
   for (const article of articles) {
     const date = DateTime.fromJSDate(new Date(article.pubDate)).toISODate();
     const url = NHKNEWS_BASE_URL + article.link;
+
+    let skip = false;
+    for (const ignorePattern of ignorePatterns) {
+      if (article.title.match(ignorePattern)) {
+        skip = true;
+      }
+    }
+    if (skip) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
 
     const prefectureMatch = article.title.match(prefecturePattern);
     if (prefectureMatch) {
