@@ -331,14 +331,14 @@ const getAllArticles = (pageCount = 7) => latestNhkArticles(fetch, pageCount).th
   ];
 
   const confirmedPatientPatterns = [
-    new RegExp("([0-9０-９]+)人感染確認", "iu"),
-    new RegExp("([0-9０-９]+)人の感染確認", "iu"),
-    new RegExp("感染確認([0-9０-９]+)人", "iu"),
+    new RegExp("([0-9０-９万]+)人感染確認", "iu"),
+    new RegExp("([0-9０-９万]+)人の感染確認", "iu"),
+    new RegExp("感染確認([0-9０-９万]+)人", "iu"),
   ];
   const deceasedPatientPatterns = [
-    new RegExp("([0-9０-９]+)人の死亡確認"),
-    new RegExp("([0-9０-９]+)人死亡"),
-    new RegExp("([0-9０-９]+)人が死亡"),
+    new RegExp("([0-9０-９万]+)人の死亡確認"),
+    new RegExp("([0-9０-９万]+)人死亡"),
+    new RegExp("([0-9０-９万]+)人が死亡"),
   ];
   const prefecturePattern = new RegExp(`(${Object.keys(prefecturesFromJa).join("|")})`);
 
