@@ -101,27 +101,29 @@ const getLatestPortCovidReport = async (fetch, indexUrl) => {
 const getPortCaseCount = async (fetch, reportUrl) => fetch(reportUrl).then((response) => response.text()).then(async (html) => {
   const $ = cheerio.load(html);
   const date = $("time").first().attr("datetime");
-  const table = $(".m-grid__col1").find("table").first();
-  // The summary is in the text element right before the table.
-  // <div ...> description <table> ...</table> </div>
-  const tableHeader = table.parent().contents().first().text();
-
+  const tables = $(".m-grid__col1").find("table");
   let count = 0;
-  if (tableHeader) {
-    const symptomaticCases = new RegExp("検疫により新型コロナウイルスの患者(\\d+)名");
-    const asymptomaticCases = new RegExp("無症状病原体保有者(\\d+)名");
-    const sympMatch = tableHeader.match(symptomaticCases);
-    const asympMatch = tableHeader.match(asymptomaticCases);
-    if (sympMatch) {
-      count += parseInt(sympMatch[1], 10);
+
+  for (const table of tables) {
+    // The summary is in the text element right before the table.
+    // <div ...> description <table> ...</table> </div>
+    const tableHeader = null; // $(table).parent().contents().first().text();
+    if (tableHeader) {
+      const symptomaticCases = new RegExp("検疫により新型コロナウイルスの患者(\\d+)名");
+      const asymptomaticCases = new RegExp("無症状病原体保有者(\\d+)名");
+      const sympMatch = tableHeader.match(symptomaticCases);
+      const asympMatch = tableHeader.match(asymptomaticCases);
+      if (sympMatch) {
+        count += parseInt(sympMatch[1], 10);
+      }
+      if (asympMatch) {
+        count += parseInt(asympMatch[1], 10);
+      }
+    } else {
+      // confirm by using the table rows also.
+      const tableRows = $(table).find("tr").length;
+      count += tableRows - 1; // remove one for the header.
     }
-    if (asympMatch) {
-      count += parseInt(asympMatch[1], 10);
-    }
-  } else {
-    // confirm by using the table rows also.
-    const tableRows = table.find("tr").length;
-    count = tableRows - 1; // remove one for the header.
   }
 
   return { count, date };
