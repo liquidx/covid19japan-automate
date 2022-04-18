@@ -76,7 +76,7 @@ const getSummaryTableFromReport = async (fetch, reportUrl, credentials) => {
 };
 
 const getLatestPortCovidReport = async (fetch, indexUrl) => {
-  const portReportName = "新型コロナウイルス感染症の患者等の発生について（空港";
+  const portReportName = new RegExp("新型コロナウイルス感染症の患者等の発生について（(空港|検疫)");
   if (!indexUrl) {
     indexUrl = DEFAULT_MHLW_INDEX_URL;
   }
