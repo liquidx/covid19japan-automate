@@ -190,6 +190,8 @@ exports.mhlwPortUpdate = functions.region("us-central1").runWith(lightTask).http
     writeToSpreadsheet = true;
   }
 
+  const yesterday = DateTime.utc().minus({ days: 1 }).toISODate();
+
   getLatestPortCovidReport(fetch).then(async (url) => {
     const result = await getPortCaseCount(fetch, url);
     console.log(result);
@@ -204,8 +206,14 @@ exports.mhlwPortUpdate = functions.region("us-central1").runWith(lightTask).http
           },
         },
       };
-      writeResult = await updatePatientData(result.date, updates, true);
-      res.send(JSON.stringify(writeResult.null, 2));
+
+      if (result.date >= yesterday) {
+        writeResult = await updatePatientData(result.date, updates, true);
+        res.send(JSON.stringify(writeResult.null, 2));
+      } else {
+        res.send(`Ignored because date is too old: ${result.date}`);
+        notify(`[mhlwPort] Latest report is too old: ${result.date}`);
+      }
       return;
     }
 

@@ -31,6 +31,8 @@ const mhlwPortCases = (options) => {
     const result = await getPortCaseCount(fetch, url);
     console.log(result);
 
+    const yesterday = DateTime.utc().minus({ days: 1 }).toISODate();
+
     if (result.count) {
       const updates = {
         "Port Quarantine": {
@@ -40,9 +42,14 @@ const mhlwPortCases = (options) => {
           },
         },
       };
-      if (options.write) {
-        const writeResult = await updatePatientData(result.date, updates, true);
-        console.log(writeResult);
+
+      if (result.date >= yesterday) {
+        if (options.write) {
+          const writeResult = await updatePatientData(result.date, updates, true);
+          console.log(writeResult);
+        }
+      } else {
+        console.log("Data is too old");
       }
     }
   });
